@@ -163,6 +163,10 @@ pub mod pallet {
         /// A type for linking account data to identity.
         type AccountLinker: LinkIdty<Self::AccountId, Self::IdtyIndex>;
 
+        /// Gallia : si vrai (Duniter d'origine), le compte doit déjà exister pour recevoir une identité.
+        #[pallet::constant]
+        type RequireExistingAccount: Get<bool>;
+
         /// Handle logic to validate an identity name.
         type IdtyNameValidator: IdtyNameValidator;
 
@@ -1071,8 +1075,11 @@ pub mod pallet {
             );
 
             // 4. receiver account must already exist
+            // (Gallia : désactivé, car seul un compte vérifié peut recevoir des Gallo ;
+            // le Vérificateur crée donc l'identité avant d'approvisionner le compte.)
             ensure!(
-                (frame_system::Account::<T>::get(receiver_key).providers >= 1)
+                !T::RequireExistingAccount::get()
+                    || (frame_system::Account::<T>::get(receiver_key).providers >= 1)
                     || (frame_system::Account::<T>::get(receiver_key).sufficients >= 1),
                 Error::<T>::AccountNotExist
             );

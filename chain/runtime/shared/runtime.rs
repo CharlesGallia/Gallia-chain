@@ -134,7 +134,33 @@ macro_rules! define_runtime {
         pub struct BaseCallFilter;
         impl Contains<RuntimeCall> for BaseCallFilter {
             fn contains(call: &RuntimeCall) -> bool {
-                !matches!(call, RuntimeCall::Session(_))
+                use sp_runtime::traits::StaticLookup;
+                // Gallia : un virement n'est accepté que vers un compte autorisé à recevoir des Gallo
+                // (Galli vérifié par la Titulus, Trésor, Vérificateur, compte technique de la Gallia).
+                let can_receive = |dest: &<<Runtime as frame_system::Config>::Lookup as StaticLookup>::Source| {
+                    <Runtime as frame_system::Config>::Lookup::lookup(dest.clone())
+                        .map(|account| Wot::can_receive(&account))
+                        .unwrap_or(false)
+                };
+                match call {
+                    RuntimeCall::Session(_) => false,
+                    // Gallia : ni compte à usage unique (il échapperait à la règle ci-dessus),
+                    // ni échange atomique (outil d'échange avec d'autres chaînes : pas de pont).
+                    RuntimeCall::OneshotAccount(_) | RuntimeCall::AtomicSwap(_) => false,
+                    RuntimeCall::Balances(
+                        pallet_balances::Call::transfer_allow_death { dest, .. }
+                        | pallet_balances::Call::transfer_keep_alive { dest, .. }
+                        | pallet_balances::Call::transfer_all { dest, .. },
+                    ) => can_receive(dest),
+                    RuntimeCall::Balances(pallet_balances::Call::force_transfer { dest, .. }) => {
+                        can_receive(dest)
+                    }
+                    RuntimeCall::UniversalDividend(
+                        pallet_universal_dividend::Call::transfer_ud { dest, .. }
+                        | pallet_universal_dividend::Call::transfer_ud_keep_alive { dest, .. },
+                    ) => can_receive(dest),
+                    _ => true,
+                }
             }
         }
 

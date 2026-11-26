@@ -1,0 +1,14 @@
+# Bloc zéro de la Gallia : fichier généré par etape3/creer_bloc_zero.py, ne pas modifier à la main.
+ud: 1000
+first_ud: 1795709006000
+first_ud_reeval: null
+clique_smiths:
+- name: Charles
+  session_keys: '0x151bafcaea0cbfef740e1cef7d03f605a96ca9b1231e3c0615de4aaa0c16f6fcacaf836988ffac3873080e7dcc53fefc893d5665497b5959057b1db6bfe12e54acaf836988ffac3873080e7dcc53fefc893d5665497b5959057b1db6bfe12e54acaf836988ffac3873080e7dcc53fefc893d5665497b5959057b1db6bfe12e54'
+sudo_key: g1MYCsdGRgwrmQKr8H4z3J2RpH5pxx6zaVpP3yT56XxnzYGXm
+treasury_funder_address: g1NZMj1tjN4N4nRSgMKhBaL691QkfWeDNPob6ni5uz2iG6MMz
+technical_committee:
+- Charles
+verifiers:
+- Verificateur-Titulus
+merit_account: g1NkDuVCF8tdmxvqRTtFNDEu9AN6P5pX4GRnDvYwk2uwkhbND

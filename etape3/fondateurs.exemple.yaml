@@ -26,3 +26,7 @@ fondateurs:
 
 # Les membres du comité technique (pseudonymes ci-dessus).
 comite_technique: [Charles]
+
+# Pain quotidien de départ en Gallo (1 par défaut) et, pour un test, délai du premier pain en minutes.
+pain_quotidien_gallo: 1
+# premier_pain_dans_minutes: 15

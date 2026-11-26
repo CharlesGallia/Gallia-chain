@@ -165,8 +165,9 @@ parameter_types! {
 /******************/
 
 parameter_types! {
-    // Gallia : 1 au lancement (un seul nœud), à remonter par la gouvernance quand il y aura 3 à 5 nœuds.
-    pub const SmithWotMinCertForMembership: u32 = 1;
+    // Gallia : 0. Les forgerons sont reconnus par le KYC de la Titulus, pas parrainés par d'autres
+    // forgerons. Un nouveau forgeron doit toujours être invité par un forgeron, puis accepter.
+    pub const SmithWotMinCertForMembership: u32 = 0;
     pub const SmithMaxByIssuer: u32 = 12;
     pub const SmithInactivityMaxDuration: u32 =
         common_runtime::param_duration!(3 * 24 * 30, 15); // 3 months (24 sessions/day)

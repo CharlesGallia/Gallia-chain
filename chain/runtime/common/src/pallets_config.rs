@@ -113,6 +113,22 @@ macro_rules! pallets_config {
             type WeightInfo = weights::pallet_duniter_account::WeightInfo<Runtime>;
         }
 
+        /// Gallia : l'identité est créée par un Vérificateur avant que le compte reçoive des Gallo ;
+        /// on vérifie seulement que le compte n'est pas déjà rattaché à une autre identité.
+        pub struct GalliaAccountWorthiness;
+        impl pallet_identity::traits::CheckAccountWorthiness<Runtime> for GalliaAccountWorthiness {
+            fn check_account_worthiness(account: &AccountId) -> Result<(), sp_runtime::DispatchError> {
+                frame_support::ensure!(
+                    frame_system::Account::<Runtime>::get(account).data.linked_idty.is_none(),
+                    pallet_identity::Error::<Runtime>::AccountAlreadyLinked
+                );
+                Ok(())
+            }
+
+            #[cfg(feature = "runtime-benchmarks")]
+            fn set_worthy(_account: &AccountId) {}
+        }
+
         parameter_types! {
             pub const ReloadRate: BlockNumber = 1 * HOURS; // faster than DAYS
             pub const MaxQuota: Balance = 1000; // 10 ĞD
@@ -440,9 +456,10 @@ macro_rules! pallets_config {
         impl pallet_identity::Config for Runtime {
             type AccountId32 = AccountId;
             type AccountLinker = Account;
+            type RequireExistingAccount = frame_support::traits::ConstBool<false>;
             type AutorevocationPeriod = AutorevocationPeriod;
             type ChangeOwnerKeyPeriod = ChangeOwnerKeyPeriod;
-            type CheckAccountWorthiness = Account;
+            type CheckAccountWorthiness = GalliaAccountWorthiness;
             type CheckIdtyCallAllowed = Wot;
             type ConfirmPeriod = ConfirmPeriod;
             type DeletionPeriod = DeletionPeriod;

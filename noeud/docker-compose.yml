@@ -1,0 +1,30 @@
+# Nœud de la vraie chaîne Gallia sur ce serveur (forgeron : Charles).
+# Ports choisis libres (n8n et les autres services ne sont pas touchés) :
+#   9944  : accès des applications (RPC), seulement depuis le serveur lui-même
+#   30333 : échange avec les autres nœuds de la Gallia (ouvert au monde)
+#   9615  : statistiques (Prometheus), seulement depuis le serveur lui-même
+# Données de la chaîne et trousseau du nœud : ~/gallia-data (hors Git, sauvegardé chaque nuit).
+services:
+  gallia:
+    container_name: gallia-noeud
+    image: duniter/duniter-gtest-1000:1200-fast-2.3.3   # sert seulement d'environnement ; le programme est le nôtre
+    entrypoint: ["/usr/local/bin/duniter"]
+    user: root
+    network_mode: host
+    restart: unless-stopped
+    volumes:
+      - ${HOME}/gallia-build/duniter-gallia:/usr/local/bin/duniter:ro
+      - ../chain/resources/gallia-raw.json:/gallia-raw.json:ro
+      - ${HOME}/gallia-data:/var/lib/duniter
+    command:
+      - --chain=/gallia-raw.json
+      - --base-path=/var/lib/duniter
+      - --name=Gallia-Charles
+      - --validator
+      - --rpc-port=9944
+      - --rpc-cors=all
+      - --port=30333
+      - --prometheus-port=9615
+      - --no-telemetry
+      - --state-pruning=archive
+      - --blocks-pruning=archive

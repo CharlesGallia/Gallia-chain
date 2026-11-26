@@ -19,10 +19,13 @@ RESSOURCES = ICI.parent / "chain" / "resources"
 ENTREE = Path(sys.argv[1]) if len(sys.argv) > 1 else ICI / "fondateurs.yaml"
 
 AN = 365 * 24 * 3600
-PAIN_DE_DEPART = 100  # 1 Gallo = 100 unités de base (deux décimales)
 DEPOT_MINIMUM = 100  # 1 Gallo : transféré au bloc zéro au trésor de gouvernance de Duniter
 
 cfg = yaml.safe_load(ENTREE.read_text(encoding="utf-8"))
+# Pain quotidien de départ, en Gallo (1 Gallo = 100 unités de base, deux décimales). Par défaut : 1 Gallo.
+PAIN_DE_DEPART = round(float(cfg.get("pain_quotidien_gallo", 1)) * 100)
+# Premier pain quotidien N minutes après la fabrication du bloc zéro (sinon : 24 h après le lancement).
+PREMIER_PAIN_MIN = cfg.get("premier_pain_dans_minutes")
 
 
 def erreur(msg):
@@ -85,7 +88,7 @@ donnees = {
 
 reglages = {
     "ud": PAIN_DE_DEPART,
-    "first_ud": None,
+    "first_ud": (maintenant + int(PREMIER_PAIN_MIN) * 60) * 1000 if PREMIER_PAIN_MIN else None,
     "first_ud_reeval": None,
     "clique_smiths": [{"name": forgeron["pseudo"], "session_keys": forgeron.get("cles_de_session")}],
     "sudo_key": admin,
@@ -101,4 +104,6 @@ RESSOURCES.mkdir(parents=True, exist_ok=True)
 entete = "# Bloc zéro de la Gallia : fichier généré par etape3/creer_bloc_zero.py, ne pas modifier à la main.\n"
 (RESSOURCES / "gallia.yaml").write_text(entete + yaml.safe_dump(reglages, allow_unicode=True, sort_keys=False), encoding="utf-8")
 print(f"Bloc zéro préparé : {len(pseudos)} identités (dont le Vérificateur), forgeron {forgeron['pseudo']}.")
+print(f"Pain quotidien de départ : {PAIN_DE_DEPART / 100:.2f} Gallo"
+      + (f", premier pain dans {PREMIER_PAIN_MIN} minutes." if PREMIER_PAIN_MIN else ", premier pain 24 h après le lancement."))
 print(f"Fichiers écrits dans {RESSOURCES}")

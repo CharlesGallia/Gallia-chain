@@ -1,0 +1,26 @@
+# Bloc zéro de la Gallia : UNIQUEMENT des adresses publiques (g1…), JAMAIS de phrase secrète.
+
+# Vérificateur Titulus : compte créé sur le serveur (phrase secrète dans ~/gallia-secrets, hors Git).
+verificateur:
+  pseudo: Verificateur-Titulus
+  adresse: g1NZMj1tjN4N4nRSgMKhBaL691QkfWeDNPob6ni5uz2iG6MMz
+
+# Trésor de la Gallia : compte créé sur le serveur (phrase secrète dans ~/gallia-secrets, hors Git).
+tresor: g1NkDuVCF8tdmxvqRTtFNDEu9AN6P5pX4GRnDvYwk2uwkhbND
+
+# Administrateur de la chaîne : Charles (même adresse que ci-dessous).
+administrateur: g1MYCsdGRgwrmQKr8H4z3J2RpH5pxx6zaVpP3yT56XxnzYGXm
+
+forgeron:
+  pseudo: Charles
+  cles_de_session: "0x151bafcaea0cbfef740e1cef7d03f605a96ca9b1231e3c0615de4aaa0c16f6fcacaf836988ffac3873080e7dcc53fefc893d5665497b5959057b1db6bfe12e54acaf836988ffac3873080e7dcc53fefc893d5665497b5959057b1db6bfe12e54acaf836988ffac3873080e7dcc53fefc893d5665497b5959057b1db6bfe12e54"
+
+fondateurs:
+  - pseudo: Charles
+    adresse: g1MYCsdGRgwrmQKr8H4z3J2RpH5pxx6zaVpP3yT56XxnzYGXm
+
+comite_technique: [Charles]
+
+# Réglages du test sur le serveur (à remettre à 1 Gallo avant le vrai lancement).
+pain_quotidien_gallo: 10
+premier_pain_dans_minutes: 15

@@ -262,6 +262,7 @@ impl pallet_identity::traits::IdtyNameValidator for IdtyNameValidatorTestImpl {
 }
 
 impl pallet_identity::Config for Test {
+    type RequireExistingAccount = frame_support::traits::ConstBool<true>;
     type AccountId32 = AccountId32Mock;
     type AccountLinker = ();
     type AutorevocationPeriod = AutorevocationPeriod;

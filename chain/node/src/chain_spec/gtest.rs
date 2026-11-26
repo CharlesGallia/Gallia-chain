@@ -101,6 +101,7 @@ pub fn local_testnet_config(
             )),
             vec![1],
             Some(get_account_id_from_seed::<sp_core::ed25519::Public>("Tresor")),
+            vec![get_account_id_from_seed::<sp_core::ed25519::Public>("Alice")],
         )
     })
     .with_properties(
@@ -280,15 +281,26 @@ struct GalliaGenesisExtra {
     verifiers: Vec<String>,
     /// compte du Trésor du mérite
     merit_account: Option<AccountId>,
+    /// autres comptes techniques de la Gallia autorisés à recevoir des Gallo
+    #[serde(default)]
+    authorized_accounts: Vec<AccountId>,
 }
 
-/// Gallia : ajoute les Vérificateurs et le compte du Trésor du mérite au bloc zéro.
+/// Gallia : ajoute les Vérificateurs, le compte du Trésor du mérite et les comptes autorisés
+/// d'office à recevoir des Gallo (Trésor, Vérificateurs, comptes techniques) au bloc zéro.
 fn gallia_genesis_patch(
     mut conf: serde_json::Value,
     verifiers: Vec<u32>,
     merit_account: Option<AccountId>,
+    mut authorized_accounts: Vec<AccountId>,
 ) -> serde_json::Value {
-    conf["wot"] = serde_json::json!({ "verifiers": verifiers });
+    authorized_accounts.extend(merit_account.clone());
+    authorized_accounts.sort();
+    authorized_accounts.dedup();
+    conf["wot"] = serde_json::json!({
+        "verifiers": verifiers,
+        "authorizedAccounts": authorized_accounts,
+    });
     conf["universalDividend"]["meritAccount"] = serde_json::json!(merit_account);
     conf
 }
@@ -311,6 +323,7 @@ pub fn gallia_chainspecs(config_file_path: String) -> Result<ChainSpec, String> 
         None,
     )?;
     let mut verifiers = Vec::new();
+    let mut authorized_accounts = extra.authorized_accounts.clone();
     for name in &extra.verifiers {
         let idty = genesis_data
             .identities
@@ -318,6 +331,7 @@ pub fn gallia_chainspecs(config_file_path: String) -> Result<ChainSpec, String> 
             .find(|i| &i.name == name)
             .ok_or_else(|| format!("verifier `{name}` is not a genesis identity"))?;
         verifiers.push(idty.idty_index);
+        authorized_accounts.push(idty.owner_key.clone());
     }
     if verifiers.is_empty() {
         return Err("at least one verifier (Vérificateur Titulus) is required".to_string());
@@ -334,6 +348,7 @@ pub fn gallia_chainspecs(config_file_path: String) -> Result<ChainSpec, String> 
         genesis_data_to_gtest_genesis_conf(genesis_data),
         verifiers,
         extra.merit_account,
+        authorized_accounts,
     ))
     .with_properties(
         serde_json::json!({

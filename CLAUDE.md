@@ -33,7 +33,12 @@ Monnaie de la Gallia, inspirée de la Ğ1 et construite à partir du logiciel li
   Un compte « Vérificateur Titulus » de la Gallia certifie chaque Galli vérifié.
   Le nombre de certifications nécessaires pour devenir membre doit donc pouvoir tomber à 1,
   et la règle de distance de la toile de confiance doit être adaptée ou désactivée. Étudie comment le faire dans Duniter v2.
-- Circulation libre entre tous les comptes, sans plafond.
+- Circulation libre entre tous les Gallis, sans plafond.
+- Seuls les comptes vérifiés par la Titulus (certifiés par le compte Vérificateur Titulus) peuvent recevoir des Gallo.
+  Le Trésor, le Vérificateur et les comptes techniques de la Gallia sont autorisés d'office. Règle inscrite dans le runtime.
+- Pas de pont ni de version du Gallo sur une autre chaîne.
+- Les forgerons (Gallis qui font tourner un nœud producteur de blocs) sont eux aussi reconnus par le KYC de la Titulus :
+  pas de parrainage par d'autres forgerons. Un nouveau forgeron est invité, accepte et met son nœud en ligne.
 
 ## Étapes
 
@@ -58,7 +63,12 @@ Monnaie de la Gallia, inspirée de la Ğ1 et construite à partir du logiciel li
 ### Étape 4 : voir et utiliser les Gallo
 - Installer l'indexeur de Duniter v2 pour l'historique des transactions.
 - Une page web simple (sur ce serveur) : solde d'un compte, historique, nombre de Gallis, Gallo créés aujourd'hui.
-- Un portefeuille de test : créer un compte, recevoir, envoyer des Gallo. S'appuyer sur les portefeuilles libres de la Ğ1 (Ğecko, G1nkgo) si c'est plus rapide.
+- Le portefeuille **Galli Pay** : créer un compte, recevoir, envoyer des Gallo. Il sera intégré à GALLINK.
+- Le Gallo a sa propre interface, jamais celle de la Ğ1. Galli Pay suit la charte GALLIA « Nuit Impériale » :
+  nuit `#0D0E1B`, or `#C6A56A`, ivoire `#F6F0E4`, titres en Cormorant Garamond, texte en Inter.
+- On peut réutiliser le code d'un portefeuille libre de la Ğ1 en respectant sa licence (mention et licence conservées),
+  mais aucun nom, logo ni écran de la Ğ1 ne doit être visible pour les Gallis.
+- Ğecko sert uniquement à créer la clé du fondateur ; il ne fait pas partie de l'interface de la Gallia.
 
 ### Étape 5 : le service de la Gallia (à côté de la chaîne)
 Un petit service (Node.js ou Python) qui :

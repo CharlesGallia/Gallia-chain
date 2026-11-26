@@ -208,7 +208,8 @@ impl SubstrateCli for Cli {
 
                 let runtime_type = if starts_with("g1") {
                     RuntimeType::G1
-                } else if starts_with("gt") || starts_with("dev") {
+                } else if starts_with("gt") || starts_with("dev") || starts_with("gallia") {
+                    // Gallia : la chaîne Gallia utilise le runtime gtest adapté
                     RuntimeType::GTest
                 } else {
                     panic!("unknown runtime")

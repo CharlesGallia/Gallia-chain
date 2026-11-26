@@ -1,7 +1,8 @@
 """Étape 3 : teste la chaîne Gallia locale (comptes de test publics, aucune valeur réelle).
 
 Vérifie : symbole et pain quotidien de départ, entrée d'un Galli par le Vérificateur Titulus,
-refus pour un compte qui n'est pas Vérificateur, part du Trésor du mérite, réclamation du pain.
+refus pour un compte qui n'est pas Vérificateur, seuls les comptes vérifiés reçoivent des Gallo,
+part du Trésor du mérite, réclamation du pain.
 Usage : python tester_gallia.py [ws://127.0.0.1:9945] [--attendre-pain]
 """
 import hashlib
@@ -32,7 +33,10 @@ def dev_key(name):
 
 def send(kp, module, fn, params):
     call = s.compose_call(module, fn, params)
-    r = s.submit_extrinsic(s.create_signed_extrinsic(call, keypair=kp), wait_for_inclusion=True)
+    try:
+        r = s.submit_extrinsic(s.create_signed_extrinsic(call, keypair=kp), wait_for_inclusion=True)
+    except Exception as e:  # transaction refusée avant même d'entrer dans un bloc
+        return False, f"refusée : {e}"
     return r.is_success, (None if r.is_success else r.error_message)
 
 
@@ -71,13 +75,22 @@ check("compte du Trésor du mérite défini", s.query("UniversalDividend", "Meri
 print("\nEntrée d'un nouveau Galli :")
 galli = Keypair.create_from_mnemonic(Keypair.generate_mnemonic(), ss58_format=s.ss58_format)
 intrus = Keypair.create_from_mnemonic(Keypair.generate_mnemonic(), ss58_format=s.ss58_format)
-for kp in (galli, intrus):
-    send(bob, "Balances", "transfer_keep_alive", {"dest": kp.ss58_address, "value": 500})
+okt, err = send(bob, "Balances", "transfer_keep_alive", {"dest": galli.ss58_address, "value": 500})
+check(f"avant vérification, le compte ne peut pas recevoir de Gallo ({err})", not okt)
 okb, err = send(bob, "Identity", "create_identity", {"owner_key": intrus.ss58_address})
 check(f"Bob (pas Vérificateur) ne peut pas créer d'identité ({err})", not okb)
 ok1, err = send(alice, "Identity", "create_identity", {"owner_key": galli.ss58_address})
 check(f"le Vérificateur crée l'identité du Galli {err or ''}", ok1)
 idx = idty_of(galli.ss58_address)
+okt, err = send(bob, "Balances", "transfer_keep_alive", {"dest": galli.ss58_address, "value": 500})
+check(f"une fois vérifié, le Galli peut recevoir des Gallo {err or ''}", okt)
+okt, err = send(galli, "Balances", "transfer_keep_alive", {"dest": intrus.ss58_address, "value": 100})
+check(f"le Galli ne peut pas envoyer à un compte non vérifié ({err})", not okt)
+okt, err = send(bob, "UniversalDividend", "transfer_ud", {"dest": intrus.ss58_address, "value": 1000})
+check(f"pas de contournement par un virement en pains quotidiens ({err})", not okt)
+okt, err = send(bob, "OneshotAccount", "create_oneshot_account", {"dest": intrus.ss58_address, "value": 500})
+check(f"pas de contournement par un compte à usage unique ({err})", not okt)
+check("le compte non vérifié n'a reçu aucun Gallo", free(intrus.ss58_address) == 0)
 ok2, err = send(galli, "Identity", "confirm_identity", {"idty_name": f"Galli-test-{idx}"})
 check(f"le Galli confirme son identité {err or ''}", ok2)
 okc, err = send(bob, "Certification", "add_cert", {"receiver": idx})

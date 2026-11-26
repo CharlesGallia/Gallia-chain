@@ -109,6 +109,12 @@ pub mod pallet {
     #[pallet::storage]
     pub type Verifiers<T: Config> = StorageMap<_, Twox64Concat, IdtyIndex, (), OptionQuery>;
 
+    /// Gallia : comptes techniques autorisés d'office à recevoir des Gallo (Trésor, comptes de service…),
+    /// en plus des comptes des Gallis vérifiés par la Titulus.
+    #[pallet::storage]
+    pub type AuthorizedAccounts<T: Config> =
+        StorageMap<_, Blake2_128Concat, T::AccountId, (), OptionQuery>;
+
     // GENESIS //
 
     #[pallet::genesis_config]
@@ -116,6 +122,8 @@ pub mod pallet {
     pub struct GenesisConfig<T: Config> {
         /// Gallia : Vérificateurs présents dès le bloc zéro.
         pub verifiers: sp_runtime::Vec<IdtyIndex>,
+        /// Gallia : comptes techniques autorisés à recevoir des Gallo dès le bloc zéro.
+        pub authorized_accounts: sp_runtime::Vec<T::AccountId>,
         #[serde(skip)]
         pub _phantom: core::marker::PhantomData<T>,
     }
@@ -125,6 +133,9 @@ pub mod pallet {
         fn build(&self) {
             for idty_index in &self.verifiers {
                 Verifiers::<T>::insert(idty_index, ());
+            }
+            for account in &self.authorized_accounts {
+                AuthorizedAccounts::<T>::insert(account, ());
             }
         }
     }
@@ -138,6 +149,10 @@ pub mod pallet {
         VerifierAdded { idty_index: IdtyIndex },
         /// Gallia : un Vérificateur a été retiré.
         VerifierRemoved { idty_index: IdtyIndex },
+        /// Gallia : un compte technique a été autorisé à recevoir des Gallo.
+        AccountAuthorized { account: T::AccountId },
+        /// Gallia : un compte technique n'est plus autorisé à recevoir des Gallo.
+        AccountUnauthorized { account: T::AccountId },
     }
 
     // CALLS //
@@ -188,6 +203,26 @@ pub mod pallet {
             check_renewal_period::<T>(idty_index)?;
             pallet_membership::Pallet::<T>::try_renew_membership(idty_index)
         }
+
+        /// Gallia : autoriser un compte technique à recevoir des Gallo. Réservé à la gouvernance.
+        #[pallet::call_index(4)]
+        #[pallet::weight(T::DbWeight::get().writes(1))]
+        pub fn authorize_account(origin: OriginFor<T>, account: T::AccountId) -> DispatchResult {
+            ensure_root(origin)?;
+            AuthorizedAccounts::<T>::insert(&account, ());
+            Self::deposit_event(Event::AccountAuthorized { account });
+            Ok(())
+        }
+
+        /// Gallia : retirer l'autorisation d'un compte technique. Réservé à la gouvernance.
+        #[pallet::call_index(5)]
+        #[pallet::weight(T::DbWeight::get().writes(1))]
+        pub fn unauthorize_account(origin: OriginFor<T>, account: T::AccountId) -> DispatchResult {
+            ensure_root(origin)?;
+            AuthorizedAccounts::<T>::remove(&account);
+            Self::deposit_event(Event::AccountUnauthorized { account });
+            Ok(())
+        }
     }
 
     // INTERNAL FUNCTIONS //
@@ -204,6 +239,23 @@ pub mod pallet {
         /// Gallia : vrai si l'identité est un Vérificateur (ou si la restriction est désactivée).
         pub fn is_allowed_issuer(idty_index: IdtyIndex) -> bool {
             !T::RestrictToVerifiers::get() || Verifiers::<T>::contains_key(idty_index)
+        }
+
+        /// Gallia : vrai si le compte peut recevoir des Gallo : compte technique autorisé, ou compte
+        /// d'un Galli vérifié par la Titulus (identité créée par un Vérificateur, non révoquée).
+        pub fn can_receive(who: &T::AccountId) -> bool {
+            if !T::RestrictToVerifiers::get() || AuthorizedAccounts::<T>::contains_key(who) {
+                return true;
+            }
+            pallet_identity::Pallet::<T>::identity_index_of(who)
+                .and_then(pallet_identity::Pallet::<T>::identity)
+                .is_some_and(|idty| idty.status != IdtyStatus::Revoked)
+        }
+
+        /// Gallia : erreur `RecipientNotVerified` si le compte ne peut pas recevoir de Gallo.
+        pub fn ensure_can_receive(who: &T::AccountId) -> DispatchResult {
+            ensure!(Self::can_receive(who), Error::<T>::RecipientNotVerified);
+            Ok(())
         }
 
         /// Gallia : le compte doit posséder l'identité visée, ou celle d'un Vérificateur.
@@ -249,6 +301,8 @@ pub mod pallet {
         NotAVerifier,
         /// Gallia : seul le propriétaire de l'identité ou un Vérificateur peut faire cela.
         NotOwnerNorVerifier,
+        /// Gallia : seuls les Gallis vérifiés par la Titulus et les comptes de la Gallia peuvent recevoir des Gallo.
+        RecipientNotVerified,
     }
 }
 

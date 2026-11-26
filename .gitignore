@@ -11,3 +11,4 @@ data/
 backups/
 node_modules/
 target/
+__pycache__/
