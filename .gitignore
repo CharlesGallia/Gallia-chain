@@ -1,0 +1,13 @@
+# Secrets : jamais dans Git
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+keystore/
+secrets/
+# Données de la chaîne et sauvegardes
+data/
+backups/
+node_modules/
+target/
