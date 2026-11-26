@@ -1,6 +1,6 @@
 # Bloc zéro de la Gallia : fichier généré par etape3/creer_bloc_zero.py, ne pas modifier à la main.
-ud: 1000
-first_ud: 1795709006000
+ud: 100
+first_ud: null
 first_ud_reeval: null
 clique_smiths:
 - name: Charles

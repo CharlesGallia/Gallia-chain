@@ -64,4 +64,4 @@ La spécification de la chaîne se construit ensuite avec `duniter build-spec --
 (fichier `chain/resources/gallia-raw.json`). Le nœud du serveur se lance avec `noeud/docker-compose.yml`
 (ports 9944 et 9615 réservés au serveur, 30333 ouvert aux autres nœuds) ; ses clés sont dans `~/gallia-data`
 et `~/gallia-secrets`, hors Git. `etape3/verifier_gallia.py <adresse>` montre l'état de la chaîne et d'un compte.
-Sauvegarde chaque nuit à 3 h 30 : `sauvegarde/sauvegarde-nuit.sh` (7 dernières copies dans `~/gallia-backups`).
+Sauvegarde chaque nuit à 3 h 30 : `sauvegarde/sauvegarde-nuit.sh` (7 dernières copies dans `~/gallia-chaine-sauvegardes`).

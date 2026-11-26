@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Sauvegarde nocturne de la Gallia : données de la chaîne (+ trousseau du nœud et clés du serveur).
 # Le nœud est arrêté quelques secondes pour une copie propre, puis relancé.
-# Les sauvegardes vont dans ~/gallia-backups (hors Git, lisibles par root seulement), 7 dernières gardées.
+# Les sauvegardes vont dans ~/gallia-chaine-sauvegardes (hors Git, lisibles par root seulement), 7 dernières gardées.
 # (L'indexeur sera ajouté ici à l'étape 4.)
 set -euo pipefail
-DEST="$HOME/gallia-backups"
+DEST="$HOME/gallia-chaine-sauvegardes"
 JOUR=$(date +%Y-%m-%d)
 mkdir -p "$DEST" && chmod 700 "$DEST"
 trap 'docker start gallia-noeud >/dev/null 2>&1 || true' EXIT

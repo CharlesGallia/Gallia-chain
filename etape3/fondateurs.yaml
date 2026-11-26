@@ -21,6 +21,5 @@ fondateurs:
 
 comite_technique: [Charles]
 
-# Réglages du test sur le serveur (à remettre à 1 Gallo avant le vrai lancement).
-pain_quotidien_gallo: 10
-premier_pain_dans_minutes: 15
+# Pain quotidien de départ : 1 Gallo par jour. Premier pain 24 h après le lancement.
+pain_quotidien_gallo: 1
