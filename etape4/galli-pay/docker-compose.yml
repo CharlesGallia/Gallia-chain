@@ -14,7 +14,7 @@ services:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
     labels:
       traefik.enable: "true"
-      traefik.http.routers.gallipay.rule: Host(`pay.gallia.space`)
-      traefik.http.routers.gallipay.entrypoints: websecure
-      traefik.http.routers.gallipay.tls.certresolver: mytlschallenge
+      traefik.http.routers.gallipay-https.rule: Host(`pay.gallia.space`)
+      traefik.http.routers.gallipay-https.entrypoints: websecure
+      traefik.http.routers.gallipay-https.tls.certresolver: mytlschallenge
       traefik.http.services.gallipay.loadbalancer.server.url: http://172.18.0.1:8090

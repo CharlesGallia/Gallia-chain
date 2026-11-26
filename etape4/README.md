@@ -29,7 +29,7 @@ Les clés ne quittent jamais le navigateur. Le nœud n'accepte que les fonctions
     docker compose up -d
 
 Traefik (déjà présent pour n8n, non modifié) découvre le conteneur par ses étiquettes et obtient le
-certificat Let's Encrypt de `pay.gallia.space` dès que l'enregistrement DNS `A pay → 91.108.102.109` existe.
+certificat Let's Encrypt de `pay.gallia.space` (DNS `A pay → 91.108.102.109`). En ligne depuis le 26/11/2026.
 
 ## Indexeur
 
