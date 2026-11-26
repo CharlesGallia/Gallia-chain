@@ -45,6 +45,15 @@
           <button data-vers="importer" class="discret petit">+ Ajouter</button>
         </div>
 
+        <form id="form-confirmer" class="carte" hidden>
+          <h3>Confirmer mon identité</h3>
+          <p>Le Vérificateur de la Titulus a créé ton identité. Choisis ton pseudonyme pour devenir Galli membre et recevoir ton pain quotidien.</p>
+          <label>Pseudonyme<input id="pseudo" required minlength="3" maxlength="42" pattern="[A-Za-z0-9_-]+" autocomplete="nickname"></label>
+          <label>Code secret<input id="code-confirmer" type="password" required autocomplete="current-password"></label>
+          <button class="or">Confirmer et devenir membre</button>
+          <p id="msg-confirmer" class="message" hidden></p>
+        </form>
+
         <div class="grille">
           <div class="carte solde">
             <h3>Solde</h3>

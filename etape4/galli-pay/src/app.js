@@ -135,10 +135,11 @@ async function peutRecevoir(adresse) {
 async function painAReclamer(adresse) {
   const idx = await api.query.identity.identityIndexOf(adresse);
   if (idx.isNone) return { membre: false, montant: 0n };
+  const index = idx.unwrap().toNumber();
   const idty = (await api.query.identity.identities(idx.unwrap())).unwrap();
   const premier = idty.data.firstEligibleUd.toJSON();
   const statut = idty.status.toString();
-  if (!premier) return { membre: statut === "Member", statut, montant: 0n };
+  if (!premier) return { membre: statut === "Member", statut, index, montant: 0n };
   let courant = (await api.query.universalDividend.currentUdIndex()).toNumber();
   const reevals = (await api.query.universalDividend.pastReevals()).toJSON();
   let total = 0n;
@@ -148,7 +149,7 @@ async function painAReclamer(adresse) {
     courant = debut;
     if (index <= premier) break;
   }
-  return { membre: statut === "Member", statut, montant: total };
+  return { membre: statut === "Member", statut, index, montant: total };
 }
 
 function envoyer(paire, tx, zone) {
@@ -201,6 +202,9 @@ async function chargerCompte() {
     $("#pain").textContent = gallo(p.montant);
     $("#statut").textContent = p.membre ? "Galli membre" : p.statut ? `Identité : ${p.statut}` : "Compte non vérifié";
     $("#reclamer").disabled = p.montant === 0n;
+    $("#form-confirmer").hidden = !["Unconfirmed", "Unvalidated"].includes(p.statut);
+    $("#form-confirmer").dataset.index = p.index ?? "";
+    $("#form-confirmer").dataset.statut = p.statut ?? "";
   });
   chargerHistorique();
 }
@@ -214,8 +218,9 @@ async function chargerHistorique() {
           filter: { or: [{ fromId: { equalTo: $a } }, { toId: { equalTo: $a } }] }) {
           nodes { timestamp amount fromId toId }
         }
-        identities(filter: { accountId: { equalTo: $a } }) {
-          nodes { udHistories(first: 30, orderBy: BLOCK_NUMBER_DESC) { nodes { timestamp amount } } }
+        udHistories(first: 30, orderBy: BLOCK_NUMBER_DESC,
+          filter: { identity: { accountId: { equalTo: $a } } }) {
+          nodes { timestamp amount }
         }
       }`,
       { a: compte.adresse },
@@ -225,7 +230,7 @@ async function chargerHistorique() {
       texte: t.toId === compte.adresse ? `Reçu de ${court(t.fromId)}` : `Envoyé à ${court(t.toId)}`,
       montant: t.toId === compte.adresse ? BigInt(t.amount) : -BigInt(t.amount),
     }));
-    for (const u of d.identities.nodes[0]?.udHistories.nodes ?? [])
+    for (const u of d.udHistories.nodes)
       lignes.push({ quand: u.timestamp, texte: "Pain quotidien", montant: BigInt(u.amount) });
     lignes.sort((a, b) => new Date(b.quand) - new Date(a.quand));
     zone.innerHTML = lignes.length
@@ -347,6 +352,23 @@ function brancher() {
       chargerHistorique();
     } catch (err) {
       message("#msg-pain", err.message, "erreur");
+    }
+  });
+
+  $("#form-confirmer").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    try {
+      const paire = deverrouiller($("#code-confirmer").value);
+      if (e.target.dataset.statut === "Unconfirmed") {
+        message("#msg-confirmer", "Confirmation de ton identité…", "info");
+        await envoyer(paire, api.tx.identity.confirmIdentity($("#pseudo").value.trim()), "#msg-confirmer");
+      }
+      message("#msg-confirmer", "Entrée dans la Gallia…", "info");
+      await envoyer(paire, api.tx.wot.claimMembership(Number(e.target.dataset.index)), "#msg-confirmer");
+      message("#msg-confirmer", "Bienvenue dans la Gallia : tu es Galli membre.", "ok");
+      e.target.reset();
+    } catch (err) {
+      message("#msg-confirmer", err.message, "erreur");
     }
   });
 
