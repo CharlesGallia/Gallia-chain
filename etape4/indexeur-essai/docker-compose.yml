@@ -1,0 +1,67 @@
+# ESSAI : indexeur temporaire de la chaîne de TEST (ports 54321 et 4351), pour l essai complet de Galli.Pay.
+services:
+  processor:
+    image: duniter/squid-app-gtest:0.5.11
+    container_name: gallia-indexeur-essai-processeur
+    network_mode: host          # pour joindre le nœud qui n'écoute que sur 127.0.0.1
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    environment:
+      DB_NAME: ${DB_NAME}
+      DB_HOST: 127.0.0.1
+      DB_PORT: 54321
+      DB_PASS: ${DB_PASSWORD}
+      RPC_ENDPOINT: ws://127.0.0.1:9945
+      GENESIS_FILE: ./input/gallia.json
+    volumes:
+      - ./input:/squid/input:ro
+    command: ["sqd", "process:prod"]
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'lib/main.js'"]
+      interval: 5s
+      timeout: 2s
+      retries: 3
+
+  db:
+    image: duniter/squid-postgres-gtest:0.5.11
+    container_name: gallia-indexeur-essai-db
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:54321:5432"
+    volumes:
+      - gallia-indexeur-essai-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_USER: postgres
+      POSTGRES_INITDB_ARGS: "--auth-host=md5"
+    command: ["postgres", "-c", "wal_level=logical", "-c", "max_replication_slots=4", "-c", "max_wal_senders=4"]
+
+  server:
+    image: duniter/squid-graphile-gtest:0.5.11
+    container_name: gallia-indexeur-essai-api
+    depends_on:
+      processor:
+        condition: service_healthy    # l'API démarre après la création des tables
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:4351:5678"
+    environment:
+      DATABASE_URL: postgres://postgres:${DB_PASSWORD}@db:5432/${DB_NAME}
+      NODE_ENV: production
+      PORT: 5678
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+
+volumes:
+  gallia-indexeur-essai-db:

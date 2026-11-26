@@ -14,11 +14,13 @@ Interface propre au Gallo, charte GALLIA « Nuit Impériale » (nuit `#0D0E1B`, 
 titres Cormorant Garamond, texte Inter). Aucun nom, logo ni écran de la Ğ1. Écrit pour la Gallia avec les
 bibliothèques libres polkadot.js (Apache-2.0) et qrcode (MIT).
 
-- Créer un compte : 12 mots secrets en français, générés dans le navigateur ; le compte y est rangé chiffré par le code secret du Galli.
-- Retrouver un compte : 12 mots (français ou anglais) et, conseillé, l'adresse g1… pour retrouver le bon chemin de dérivation (comptes créés avec d'autres portefeuilles libres).
-- Confirmer son identité après le KYC de la Titulus, et devenir Galli membre.
-- Solde, pain quotidien à réclamer, recevoir (adresse et QR code), envoyer (refusé d'avance vers un compte non vérifié), historique.
-- La Gallia en chiffres : nombre de Gallis, Gallibra du jour (pain et mérite), pain quotidien et prochain versement, Gallo en circulation, derniers virements, consultation d'un compte.
+Interface d'après les maquettes (Accueil, Services, Payer) avec la barre du bas Accueil / Services / Payer / Ruche / Profil :
+
+- Accueil : solde de la carte Gallo, Payer / Recevoir / Coffrer / Plus, pain quotidien à réclamer, derniers mouvements (« Tout voir »).
+- Services : les services Galli par familles, avec recherche ; un service pas encore construit (et la Ruche, Coffrer) ouvre « Bientôt dans la Gallia ».
+- Payer : par QR code (caméra du téléphone), par numéro (adresse g1…) ou dans l'annuaire des Gallis ; récents ; paiement refusé d'avance vers un compte non vérifié.
+- Recevoir (adresse et QR code), Profil, Mes comptes, La Gallia en chiffres (Gallis, Gallibra du jour, pain quotidien, Gallo en circulation, derniers virements).
+- Créer un compte (12 mots en français), retrouver un compte (12 mots et adresse), confirmer son identité après le KYC de la Titulus.
 
 Les clés ne quittent jamais le navigateur. Le nœud n'accepte que les fonctions « sûres » (`--rpc-methods=safe`).
 
@@ -43,13 +45,16 @@ Sa base est sauvegardée chaque nuit avec la chaîne (`sauvegarde/sauvegarde-nui
 
 ## Essai complet (chaîne de test)
 
-Avec la chaîne de test (`gallia-local`, pain toutes les 10 minutes) et une copie de Galli.Pay branchée dessus
-(`galli-pay/essai/nginx-essai.conf`, port 8091), un robot utilise la page comme un Galli :
+Avec la chaîne de test (`gallia-local`, pain toutes les 10 minutes, lancée en mode archive), son indexeur
+(`indexeur-essai/`, ports 54321 et 4351) et une copie de Galli.Pay branchée dessus (`galli-pay/essai/nginx-essai.conf`,
+port 8091), un robot utilise l'appli au format téléphone comme un Galli :
 
     docker run --rm --network host -e NODE_PATH=/home/pptruser/gp/node_modules \
       -v "$PWD/captures":/home/pptruser/captures -v "$PWD/etape4/outils":/home/pptruser/outils:ro \
       -v "$PWD/etape4/galli-pay":/home/pptruser/gp:ro ghcr.io/puppeteer/puppeteer:23.11.1 node outils/essai_galli_pay.js
 
-Résultat du 26/11/2026 : tout fonctionne. Compte créé (12 mots), virement refusé tant que le compte n'est pas
+Captures au format téléphone : `outils/captures_telephone.js`. Résultat du 26/11/2026 (nouvelle interface) : entrée
+dans la Gallia, pain réclamé, 0,50 Gallo payés à un Galli vérifié, refus vers un compte non vérifié, historique complet
+(pain, reçu, payé). Première version, même jour : tout fonctionne. Compte créé (12 mots), virement refusé tant que le compte n'est pas
 vérifié, identité créée par le Vérificateur puis confirmée dans Galli.Pay (« Galli membre »), pain réclamé
 (0,00 → 8,22 GALLO), 0,50 GALLO envoyés à un Galli vérifié, envoi vers un compte non vérifié refusé avec un message clair.

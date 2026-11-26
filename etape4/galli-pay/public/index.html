@@ -2,154 +2,264 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0D0E1B">
   <title>Galli.Pay</title>
   <meta name="description" content="Galli.Pay : le portefeuille du Gallo, monnaie de la Gallia.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header>
-    <div class="marque">
-      <span class="sceau">G</span>
-      <div>
-        <h1>Galli.Pay</h1>
-        <p>Le Gallo, monnaie de la Gallia · <span id="chaine">…</span></p>
+<div class="app">
+  <p id="etat" class="message" hidden></p>
+
+  <!-- ================= ACCUEIL ================= -->
+  <section data-ecran="accueil" hidden>
+    <header class="entete">
+      <button class="avatar" data-vers="profil" aria-label="Mon profil"><span id="initiales">G</span></button>
+      <form id="form-chercher" class="v recherche" role="search">
+        <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+        <input id="chercher" placeholder="Un Galli, un service…" aria-label="Rechercher un Galli ou un service" autocomplete="off">
+      </form>
+      <button class="v rond" data-vers="chiffres" aria-label="La Gallia en chiffres"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 20V11M12 20V5M18 20v-7"/></svg></button>
+      <button class="v rond" data-vers="comptes" aria-label="Mes comptes"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/></svg></button>
+    </header>
+
+    <div class="solde-bloc">
+      <div class="surtitre">CARTE GALLO</div>
+      <div class="solde"><span id="solde-entier">—</span><span id="solde-cents" class="cents"></span> <em>Gallo</em></div>
+      <div id="statut" class="doux"></div>
+      <button class="v pilule" data-vers="comptes">Comptes</button>
+    </div>
+
+    <nav class="actions" aria-label="Actions">
+      <button data-vers="payer"><span class="v rond grand"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></svg></span>Payer</button>
+      <button data-vers="recevoir"><span class="v rond grand"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M17 7L7 17M15 17H7V9"/></svg></span>Recevoir</button>
+      <button data-bientot="Coffrer" data-detail="Coffrer ses Gallo dans la Ruche et recevoir sa part du miel."><span class="v rond grand"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9zM12 8v8M8.5 10l3.5 2 3.5-2"/></svg></span>Coffrer</button>
+      <button data-vers="services"><span class="v rond grand"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h.01M12 12h.01M19 12h.01"/></svg></span>Plus</button>
+    </nav>
+
+    <form id="form-confirmer" class="carte bloc" hidden>
+      <h2>Confirme ton identité</h2>
+      <p class="doux">Le Vérificateur de la Titulus a créé ton identité. Choisis ton pseudonyme pour devenir Galli membre et recevoir ton pain quotidien.</p>
+      <label>Pseudonyme<input id="pseudo" required minlength="3" maxlength="42" pattern="[A-Za-z0-9_-]+" autocomplete="nickname"></label>
+      <label>Code secret<input id="code-confirmer" type="password" required autocomplete="current-password"></label>
+      <button class="ivoire large">Confirmer et devenir membre</button>
+      <p id="msg-confirmer" class="message" hidden></p>
+    </form>
+
+    <div class="carte pain">
+      <span class="pastille-or"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 13c0-4 3-7 7-7s7 3 7 7v3H5z M5 16h14"/></svg></span>
+      <div class="pain-texte">
+        <div id="pain-titre" class="fort">Pain quotidien</div>
+        <div id="pain-detail" class="doux petit">—</div>
+      </div>
+      <button id="reclamer" class="ivoire" hidden>Réclamer</button>
+    </div>
+    <form id="form-reclamer" class="carte bloc" hidden>
+      <label>Code secret pour réclamer ton pain<input id="code-reclamer" type="password" required autocomplete="current-password"></label>
+      <div class="rangee"><button class="ivoire">Réclamer mon pain</button><button type="button" class="v pilule" id="annuler-reclamer">Annuler</button></div>
+    </form>
+    <p id="msg-pain" class="message" hidden></p>
+
+    <section class="carte bloc">
+      <div class="titre-ligne"><h2>Mouvements</h2><button class="lien" data-vers="historique">Tout voir</button></div>
+      <ul id="mouvements" class="mouvements"></ul>
+    </section>
+  </section>
+
+  <!-- ================= SERVICES ================= -->
+  <section data-ecran="services" hidden>
+    <div class="surtitre">TOUT EN GALLO</div>
+    <h1>Services <em>Galli</em></h1>
+    <label class="v recherche"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+      <input id="filtre-services" placeholder="Un service, un commerçant…" aria-label="Rechercher un service" autocomplete="off"></label>
+    <div id="groupes" class="groupes"></div>
+  </section>
+
+  <!-- ================= PAYER ================= -->
+  <section data-ecran="payer" hidden>
+    <div class="surtitre">GALLI.PAY</div>
+    <h1>Payer <em>en Gallo</em></h1>
+    <div class="v onglets" role="tablist" aria-label="Moyen de paiement">
+      <button role="tab" data-onglet="qr" aria-selected="true">QR code</button>
+      <button role="tab" data-onglet="numero" aria-selected="false">Numéro</button>
+      <button role="tab" data-onglet="annuaire" aria-selected="false">Annuaire</button>
+    </div>
+
+    <div data-panneau="qr">
+      <div class="viseur">
+        <span class="coin hg"></span><span class="coin hd"></span><span class="coin bg"></span><span class="coin bd"></span>
+        <video id="camera" playsinline muted hidden></video>
+        <button id="ouvrir-camera" class="viseur-invite">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2h-2zM18 18h2v2h-2zM18 14h2M14 18v2"/></svg>
+          <span>Vise le QR du commerçant ou du Galli</span>
+          <small>Touche pour ouvrir la caméra</small>
+        </button>
       </div>
     </div>
-    <nav>
-      <button data-vers="portefeuille">Mon portefeuille</button>
+    <form id="form-numero" data-panneau="numero" hidden>
+      <label>Adresse du Galli<input id="numero" placeholder="g1…" autocomplete="off" spellcheck="false"></label>
+      <button class="ivoire large">Continuer</button>
+    </form>
+    <div data-panneau="annuaire" hidden>
+      <label class="v recherche"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+        <input id="annuaire" placeholder="Pseudonyme d'un Galli" aria-label="Chercher un Galli par son pseudonyme" autocomplete="off"></label>
+      <ul id="resultats-annuaire" class="mouvements"></ul>
+    </div>
+    <p id="msg-payer-choix" class="message" hidden></p>
+
+    <h2 class="sous-titre">Récents</h2>
+    <div id="recents" class="recents"></div>
+
+    <form id="form-payer" hidden>
+      <div class="carte destinataire">
+        <span class="initiales" id="dest-ini">?</span>
+        <div class="pain-texte">
+          <div id="dest-nom" class="fort">—</div>
+          <div class="puce">100 % Gallo</div>
+        </div>
+        <label class="montant"><input id="montant" required inputmode="decimal" placeholder="0,00" aria-label="Montant en Gallo"><small>Gallo</small></label>
+      </div>
+      <label>Code secret<input id="code-payer" type="password" required autocomplete="current-password"></label>
+      <button class="ivoire large"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>Payer avec mon code secret</button>
+      <p class="doux petit centre">Seuls les Gallis vérifiés par la Titulus peuvent recevoir des Gallo.</p>
+    </form>
+    <p id="msg-payer" class="message" hidden></p>
+  </section>
+
+  <!-- ================= RECEVOIR ================= -->
+  <section data-ecran="recevoir" hidden>
+    <div class="surtitre">GALLI.PAY</div>
+    <h1>Recevoir <em>des Gallo</em></h1>
+    <div class="carte bloc centre">
+      <img id="qr" alt="QR code de mon adresse" width="220" height="220">
+      <p id="mon-adresse" class="adresse"></p>
+      <button id="copier" class="v pilule">Copier mon adresse</button>
+      <p id="msg-recevoir" class="message" hidden></p>
+    </div>
+  </section>
+
+  <!-- ================= HISTORIQUE ================= -->
+  <section data-ecran="historique" hidden>
+    <div class="surtitre">CARTE GALLO</div>
+    <h1>Mouvements</h1>
+    <section class="carte bloc"><ul id="historique" class="mouvements"></ul></section>
+  </section>
+
+  <!-- ================= CHIFFRES ================= -->
+  <section data-ecran="chiffres" hidden>
+    <div class="surtitre">LA GALLIA</div>
+    <h1>En <em>chiffres</em></h1>
+    <div class="tuiles">
+      <div class="carte tuile"><span class="doux petit">Gallis</span><b id="c-gallis">—</b></div>
+      <div class="carte tuile"><span class="doux petit">Gallibra du jour</span><b id="c-jour">—</b><span id="c-jour-detail" class="doux petit"></span></div>
+      <div class="carte tuile"><span class="doux petit">Pain quotidien</span><b id="c-pain">—</b><span class="doux petit">prochain : <span id="c-prochain">—</span></span></div>
+      <div class="carte tuile"><span class="doux petit">Gallo en circulation</span><b id="c-masse">—</b></div>
+    </div>
+    <form id="form-recherche" class="carte bloc">
+      <h2>Consulter un compte</h2>
+      <div class="rangee"><input id="recherche" placeholder="g1…" aria-label="Adresse à consulter" autocomplete="off"><button class="ivoire">Voir</button></div>
+      <div id="resultat-recherche"></div>
+    </form>
+    <section class="carte bloc"><h2>Derniers virements</h2><ul id="derniers" class="mouvements"></ul></section>
+  </section>
+
+  <!-- ================= PROFIL ================= -->
+  <section data-ecran="profil" hidden>
+    <div class="surtitre">MON PROFIL</div>
+    <h1 id="profil-nom">Galli</h1>
+    <div class="carte bloc">
+      <p id="profil-statut" class="fort"></p>
+      <p id="profil-adresse" class="adresse"></p>
+    </div>
+    <div class="liste-menu carte">
+      <button data-vers="comptes">Mes comptes</button>
+      <button data-vers="recevoir">Mon QR code</button>
       <button data-vers="chiffres">La Gallia en chiffres</button>
-    </nav>
-  </header>
+      <button data-vers="historique">Tous mes mouvements</button>
+    </div>
+    <p class="centre"><button id="oublier" class="lien">Retirer ce compte de ce téléphone</button></p>
+    <div id="confirmer-oubli" class="carte bloc" hidden>
+      <p>Sans tes 12 mots, ce compte serait perdu. Le retirer de ce téléphone ?</p>
+      <div class="rangee"><button id="oubli-oui" class="ivoire">Oui, le retirer</button><button id="oubli-non" class="v pilule">Non</button></div>
+    </div>
+  </section>
 
-  <main>
-    <p id="etat" class="message" hidden></p>
+  <!-- ================= COMPTES ================= -->
+  <section data-ecran="comptes" hidden>
+    <div class="surtitre">CARTE GALLO</div>
+    <h1>Mes <em>comptes</em></h1>
+    <ul id="liste-comptes" class="liste-menu carte"></ul>
+    <div class="rangee">
+      <button class="ivoire" id="creer">Créer un compte</button>
+      <button class="v pilule" data-vers="importer">J'ai mes 12 mots</button>
+    </div>
+  </section>
 
-    <!-- ===== Portefeuille ===== -->
-    <section data-ecran="portefeuille" hidden>
-      <div id="sans-compte" class="carte accueil">
-        <h2>Bienvenue, Galli</h2>
-        <p>Ton portefeuille vit dans ce navigateur. Tes clés n'en sortent jamais : elles sont protégées par ton code secret.</p>
-        <div class="boutons">
-          <button id="creer" class="or">Créer mon compte</button>
-          <button data-vers="importer" class="discret">J'ai déjà mes 12 mots</button>
-        </div>
-      </div>
+  <!-- ================= BIENVENUE ================= -->
+  <section data-ecran="bienvenue" hidden>
+    <div class="bienvenue">
+      <div class="sceau">G</div>
+      <div class="surtitre">GALLI.PAY</div>
+      <h1>Bienvenue, <em>Galli</em></h1>
+      <p class="doux">Ton portefeuille vit dans ce téléphone. Tes clés n'en sortent jamais : elles sont protégées par ton code secret.</p>
+      <button id="creer-bienvenue" class="ivoire large">Créer mon compte</button>
+      <button class="v pilule large" data-vers="importer">J'ai déjà mes 12 mots</button>
+    </div>
+  </section>
 
-      <div id="avec-compte" hidden>
-        <div class="ligne-compte">
-          <select id="choix-compte" aria-label="Compte"></select>
-          <button data-vers="importer" class="discret petit">+ Ajouter</button>
-        </div>
+  <!-- ================= CRÉER ================= -->
+  <section data-ecran="creer" hidden>
+    <form id="form-creer">
+      <div class="surtitre">NOUVEAU COMPTE</div>
+      <h1>Tes 12 mots <em>secrets</em></h1>
+      <p class="doux">Écris-les sur papier, dans l'ordre, et garde-les en lieu sûr. Ils sont la seule façon de retrouver tes Gallo. Personne ne te les demandera jamais.</p>
+      <ol id="mots" class="mots"></ol>
+      <label class="case"><input type="checkbox" id="mots-notes"> J'ai noté mes 12 mots sur papier.</label>
+      <label>Nom du compte<input id="nom-creer" placeholder="Mon compte" maxlength="40"></label>
+      <label>Code secret (au moins 6 caractères)<input id="code-creer" type="password" required minlength="6" autocomplete="new-password"></label>
+      <button class="ivoire large">Créer mon compte</button>
+      <p id="msg-creer" class="message" hidden></p>
+    </form>
+  </section>
 
-        <form id="form-confirmer" class="carte" hidden>
-          <h3>Confirmer mon identité</h3>
-          <p>Le Vérificateur de la Titulus a créé ton identité. Choisis ton pseudonyme pour devenir Galli membre et recevoir ton pain quotidien.</p>
-          <label>Pseudonyme<input id="pseudo" required minlength="3" maxlength="42" pattern="[A-Za-z0-9_-]+" autocomplete="nickname"></label>
-          <label>Code secret<input id="code-confirmer" type="password" required autocomplete="current-password"></label>
-          <button class="or">Confirmer et devenir membre</button>
-          <p id="msg-confirmer" class="message" hidden></p>
-        </form>
+  <!-- ================= IMPORTER ================= -->
+  <section data-ecran="importer" hidden>
+    <form id="form-importer">
+      <div class="surtitre">RETROUVER UN COMPTE</div>
+      <h1>Mes 12 <em>mots</em></h1>
+      <p class="doux">Ils restent dans ce téléphone, chiffrés par ton code secret.</p>
+      <label>Mes 12 mots<textarea id="mots-importer" rows="3" required autocomplete="off" spellcheck="false"></textarea></label>
+      <label>Mon adresse g1… (conseillé, pour retrouver le bon compte)<input id="adresse-importer" placeholder="g1…" autocomplete="off"></label>
+      <label>Nom du compte<input id="nom-importer" placeholder="Mon compte" maxlength="40"></label>
+      <label>Code secret (au moins 6 caractères)<input id="code-importer" type="password" required minlength="6" autocomplete="new-password"></label>
+      <button class="ivoire large">Retrouver mon compte</button>
+      <p id="msg-importer" class="message" hidden></p>
+    </form>
+  </section>
 
-        <div class="grille">
-          <div class="carte solde">
-            <h3>Solde</h3>
-            <p id="solde" class="chiffre">—</p>
-            <p id="statut" class="sous"></p>
-          </div>
-          <div class="carte">
-            <h3>Pain quotidien à réclamer</h3>
-            <p id="pain" class="chiffre">—</p>
-            <button id="reclamer" class="or" disabled>Réclamer mon pain</button>
-            <p id="msg-pain" class="message" hidden></p>
-          </div>
-        </div>
+  <!-- ================= BIENTÔT ================= -->
+  <section data-ecran="bientot" hidden>
+    <div class="bienvenue">
+      <div class="sceau">G</div>
+      <div class="surtitre" id="bientot-service">SERVICE</div>
+      <h1>Bientôt dans <em>la Gallia</em></h1>
+      <p id="bientot-detail" class="doux">Ce service se prépare. Il arrivera dans Galli.Pay, tout en Gallo.</p>
+      <button class="v pilule" data-vers="services">Voir les services</button>
+    </div>
+  </section>
+</div>
 
-        <div class="grille">
-          <div class="carte">
-            <h3>Recevoir</h3>
-            <img id="qr" alt="QR code de mon adresse" width="180" height="180">
-            <p id="mon-adresse" class="adresse"></p>
-            <button id="copier" class="discret petit">Copier l'adresse</button>
-            <p id="msg-recevoir" class="message" hidden></p>
-          </div>
-          <form id="form-envoyer" class="carte">
-            <h3>Envoyer</h3>
-            <label>Adresse du Galli<input id="dest" required placeholder="g1…" autocomplete="off"></label>
-            <label>Montant en Gallo<input id="montant" required inputmode="decimal" placeholder="0,00"></label>
-            <label>Code secret<input id="code-envoyer" type="password" required autocomplete="current-password"></label>
-            <button class="or">Envoyer</button>
-            <p class="sous">Seuls les Gallis vérifiés par la Titulus peuvent recevoir des Gallo.</p>
-            <p id="msg-envoyer" class="message" hidden></p>
-          </form>
-        </div>
-
-        <div class="carte">
-          <h3>Historique</h3>
-          <ul id="historique" class="liste"></ul>
-        </div>
-        <p class="centre"><button id="oublier" class="lien">Retirer ce compte de ce navigateur</button></p>
-      </div>
-    </section>
-
-    <!-- ===== Création ===== -->
-    <section data-ecran="creer" hidden>
-      <form id="form-creer" class="carte">
-        <h2>Tes 12 mots secrets</h2>
-        <p>Écris-les sur papier, dans l'ordre, et garde-les en lieu sûr. Ils sont la seule façon de retrouver tes Gallo. Personne ne te les demandera jamais.</p>
-        <ol id="mots" class="mots"></ol>
-        <label class="case"><input type="checkbox" id="mots-notes"> J'ai noté mes 12 mots sur papier.</label>
-        <label>Nom du compte<input id="nom-creer" placeholder="Mon compte" maxlength="40"></label>
-        <label>Code secret (au moins 6 caractères)<input id="code-creer" type="password" required minlength="6" autocomplete="new-password"></label>
-        <div class="boutons">
-          <button class="or">Créer mon compte</button>
-          <button type="button" data-vers="portefeuille" class="discret">Annuler</button>
-        </div>
-        <p id="msg-creer" class="message" hidden></p>
-      </form>
-    </section>
-
-    <!-- ===== Import ===== -->
-    <section data-ecran="importer" hidden>
-      <form id="form-importer" class="carte">
-        <h2>Retrouver mon compte</h2>
-        <p>Tape tes 12 mots ici. Ils restent dans ce navigateur, chiffrés par ton code secret.</p>
-        <label>Mes 12 mots<textarea id="mots-importer" rows="3" required autocomplete="off" spellcheck="false"></textarea></label>
-        <label>Mon adresse g1… (conseillé, pour retrouver le bon compte)<input id="adresse-importer" placeholder="g1…" autocomplete="off"></label>
-        <label>Nom du compte<input id="nom-importer" placeholder="Mon compte" maxlength="40"></label>
-        <label>Code secret (au moins 6 caractères)<input id="code-importer" type="password" required minlength="6" autocomplete="new-password"></label>
-        <div class="boutons">
-          <button class="or">Retrouver mon compte</button>
-          <button type="button" data-vers="portefeuille" class="discret">Annuler</button>
-        </div>
-        <p id="msg-importer" class="message" hidden></p>
-      </form>
-    </section>
-
-    <!-- ===== Chiffres ===== -->
-    <section data-ecran="chiffres" hidden>
-      <div class="grille quatre">
-        <div class="carte"><h3>Gallis</h3><p id="c-gallis" class="chiffre">—</p></div>
-        <div class="carte"><h3>Gallibra du jour</h3><p id="c-jour" class="chiffre">—</p><p id="c-jour-detail" class="sous"></p></div>
-        <div class="carte"><h3>Pain quotidien</h3><p id="c-pain" class="chiffre">—</p><p class="sous">prochain : <span id="c-prochain">—</span></p></div>
-        <div class="carte"><h3>Gallo en circulation</h3><p id="c-masse" class="chiffre">—</p></div>
-      </div>
-      <form id="form-recherche" class="carte">
-        <h3>Consulter un compte</h3>
-        <div class="ligne-compte"><input id="recherche" placeholder="g1…" autocomplete="off"><button class="or">Voir</button></div>
-        <div id="resultat-recherche"></div>
-      </form>
-      <div class="carte">
-        <h3>Derniers virements</h3>
-        <ul id="derniers" class="liste"></ul>
-      </div>
-    </section>
-  </main>
-
-  <footer>Gallia · Gallo, deux décimales · logiciel libre (AGPL-3.0)</footer>
-  <script src="app.js"></script>
+<nav class="v barre" aria-label="Navigation">
+  <button data-onglet-bas="accueil" data-vers="accueil"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7M6 10v10h12V10"/></svg><span>Accueil</span></button>
+  <button data-onglet-bas="services" data-vers="services"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/></svg><span>Services</span></button>
+  <button data-onglet-bas="payer" data-vers="payer" class="centre-barre" aria-label="Payer"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2h-2zM18 18h2v2h-2zM18 14h2M14 18v2"/></svg></button>
+  <button data-onglet-bas="ruche" data-bientot="Ruche" data-detail="La Ruche : coffrer ses Gallo, recevoir sa part du miel, devenir Butineuse, Ouvrière ou Reine."><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/></svg><span>Ruche</span></button>
+  <button data-onglet-bas="profil" data-vers="profil"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0"/></svg><span>Profil</span></button>
+</nav>
+<script src="app.js"></script>
 </body>
 </html>
