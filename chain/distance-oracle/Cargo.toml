@@ -1,0 +1,51 @@
+[package]
+name = "distance-oracle"
+version = "0.1.0"
+authors.workspace = true
+repository.workspace = true
+license.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "distance-oracle"
+required-features = ["standalone"]
+
+[features]
+default = ["gtest", "standalone", "std"]
+gtest = []
+g1 = []
+# Feature standalone is for CLI executable
+standalone = ["clap", "tokio"]
+# Feature std is needed
+std = [
+	"codec/std",
+	"fnv/std",
+	"sp-core/std",
+	"sp-distance/std",
+	"sp-runtime/std",
+]
+try-runtime = ["sp-distance/try-runtime", "sp-runtime/try-runtime"]
+
+[dependencies]
+clap = { workspace = true, features = ["derive"], optional = true }
+codec = { workspace = true }
+fnv = { workspace = true }
+log = { workspace = true }
+rayon = { workspace = true }
+simple_logger = { workspace = true }
+sp-core = { workspace = true }
+sp-distance = { workspace = true }
+sp-runtime = { workspace = true }
+subxt = { workspace = true, features = [
+	"native",
+	"jsonrpsee",
+] }
+tokio = { workspace = true, features = [
+	"rt-multi-thread",
+	"macros",
+], optional = true }
+
+[dev-dependencies]
+bincode = { workspace = true }
+dubp-wot = { workspace = true }
+flate2 = { workspace = true, features = ["zlib-ng-compat"] }

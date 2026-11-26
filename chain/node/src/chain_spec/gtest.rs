@@ -1,0 +1,513 @@
+// Copyright 2021 Axiom-Team
+//
+// This file is part of Duniter-v2S.
+//
+// Duniter-v2S is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, version 3 of the License.
+//
+// Duniter-v2S is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
+
+use super::*;
+use crate::chain_spec::gen_genesis_data::{CommonParameters, GenesisIdentity, SessionKeysProvider};
+use common_runtime::{GenesisIdty, constants::*, entities::IdtyData};
+use gtest_runtime::{
+    ImOnlineId, Runtime, WASM_BINARY, opaque::SessionKeys, pallet_universal_dividend, parameters,
+};
+use jsonrpsee::core::JsonValue;
+use sc_consensus_grandpa::AuthorityId as GrandpaId;
+use sc_network::config::MultiaddrWithPeerId;
+use sc_service::ChainType;
+use sc_telemetry::TelemetryEndpoints;
+use serde::Deserialize;
+use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
+use sp_consensus_babe::AuthorityId as BabeId;
+use sp_core::Get;
+use std::{env, fs};
+
+pub type ChainSpec = sc_service::GenericChainSpec;
+pub type AuthorityKeys = (
+    AccountId,
+    GrandpaId,
+    BabeId,
+    ImOnlineId,
+    AuthorityDiscoveryId,
+);
+
+const TOKEN_DECIMALS: usize = 2;
+const TOKEN_SYMBOL: &str = "GALLO";
+const NON_EXPIRING_LOCAL_AUTHORITY: u32 = u32::MAX;
+static EXISTENTIAL_DEPOSIT: u64 = parameters::ExistentialDeposit::get();
+
+#[derive(Default, Clone, Deserialize)]
+// Runtime parameters are fixed at compilation.
+struct GenesisParameters {}
+
+struct GTestSKP;
+impl SessionKeysProvider<SessionKeys> for GTestSKP {
+    fn session_keys(keys: &AuthorityKeys) -> SessionKeys {
+        let cloned = keys.clone();
+        SessionKeys {
+            grandpa: cloned.1,
+            babe: cloned.2,
+            im_online: cloned.3,
+            authority_discovery: cloned.4,
+        }
+    }
+}
+
+/// generate local network chainspects
+pub fn local_testnet_config(
+    initial_authorities_len: usize,
+    initial_smiths_len: usize,
+    initial_identities_len: usize,
+) -> Result<ChainSpec, String> {
+    Ok(ChainSpec::builder(
+        &get_wasm_binary().ok_or_else(|| "Development wasm not available".to_string())?,
+        None,
+    )
+    .with_name("Gallia Local")
+    .with_id("gallia_local")
+    .with_protocol_id("gallia_local")
+    .with_chain_type(ChainType::Local)
+    .with_genesis_config_patch({
+        let genesis_data =
+            gen_genesis_data::generate_genesis_data_for_local_chain::<_, _, SessionKeys, GTestSKP>(
+                // Initial authorities len
+                initial_authorities_len,
+                // Initial smiths len,
+                initial_smiths_len,
+                // Initial identities len
+                initial_identities_len,
+                EXISTENTIAL_DEPOSIT,
+                None,
+                // Sudo account
+                get_local_sudo_account_id_from_seed("Alice"),
+                get_parameters,
+            )
+            .expect("Genesis Data must be buildable");
+        // Gallia : Alice (identité n°1) est le Vérificateur Titulus de test,
+        // le compte de test //Tresor reçoit la part du mérite.
+        gallia_genesis_patch(
+            genesis_data_to_gtest_genesis_conf(pin_local_authorities_non_expiring(
+                genesis_data,
+                initial_authorities_len,
+            )),
+            vec![1],
+            Some(get_account_id_from_seed::<sp_core::ed25519::Public>("Tresor")),
+        )
+    })
+    .with_properties(
+        serde_json::json!({
+            "tokenDecimals": TOKEN_DECIMALS,
+            "tokenSymbol": TOKEN_SYMBOL,
+        })
+        .as_object()
+        .expect("must be a map")
+        .clone(),
+    )
+    .build())
+}
+
+/// Keep local genesis authorities stable. Expiry tests must add their smith after genesis.
+fn pin_local_authorities_non_expiring(
+    mut genesis_data: super::gen_genesis_data::GenesisData<GenesisParameters, SessionKeys>,
+    initial_authorities_len: usize,
+) -> super::gen_genesis_data::GenesisData<GenesisParameters, SessionKeys> {
+    for authority_index in 1..=initial_authorities_len as u32 {
+        if let Some(membership) = genesis_data.memberships.get_mut(&authority_index) {
+            membership.expire_on = NON_EXPIRING_LOCAL_AUTHORITY;
+        }
+        if let Some(received_certs) = genesis_data.certs_by_receiver.get_mut(&authority_index) {
+            for expire_on in received_certs.values_mut() {
+                *expire_on = Some(NON_EXPIRING_LOCAL_AUTHORITY);
+            }
+        }
+    }
+    genesis_data
+}
+
+fn get_parameters(_: &Option<GenesisParameters>) -> CommonParameters {
+    CommonParameters {
+        currency_name: TOKEN_SYMBOL.to_string(),
+        decimals: TOKEN_DECIMALS,
+        babe_epoch_duration: parameters::EpochDuration::get(),
+        babe_expected_block_time: parameters::ExpectedBlockTime::get(),
+        babe_max_authorities: parameters::MaxAuthorities::get(),
+        timestamp_minimum_period: parameters::MinimumPeriod::get(),
+        balances_existential_deposit: parameters::ExistentialDeposit::get(),
+        authority_members_max_authorities: parameters::MaxAuthorities::get(),
+        grandpa_max_authorities: parameters::MaxAuthorities::get(),
+        universal_dividend_max_past_reevals:
+            <Runtime as pallet_universal_dividend::Config>::MaxPastReeval::get(),
+        universal_dividend_square_money_growth_rate: parameters::SquareMoneyGrowthRate::get(),
+        universal_dividend_ud_creation_period: parameters::UdCreationPeriod::get(),
+        universal_dividend_ud_reeval_period: parameters::UdReevalPeriod::get(),
+        wot_first_issuable_on: parameters::WotFirstCertIssuableOn::get(),
+        wot_min_cert_for_membership: parameters::WotMinCertForMembership::get(),
+        wot_min_cert_for_create_idty_right: parameters::WotMinCertForCreateIdtyRight::get(),
+        identity_confirm_period: parameters::ConfirmPeriod::get(),
+        identity_change_owner_key_period: parameters::ChangeOwnerKeyPeriod::get(),
+        identity_idty_creation_period: parameters::IdtyCreationPeriod::get(),
+        identity_autorevocation_period: parameters::AutorevocationPeriod::get(),
+        identity_deletion_period: parameters::DeletionPeriod::get(),
+        membership_membership_period: parameters::MembershipPeriod::get(),
+        membership_membership_renewal_period: parameters::MembershipRenewalPeriod::get(),
+        cert_max_by_issuer: parameters::MaxByIssuer::get(),
+        cert_min_received_cert_to_be_able_to_issue_cert:
+            parameters::MinReceivedCertToBeAbleToIssueCert::get(),
+        cert_validity_period: parameters::ValidityPeriod::get(),
+        distance_min_accessible_referees: parameters::MinAccessibleReferees::get(),
+        distance_max_depth: parameters::MaxRefereeDistance::get(),
+        smith_sub_wot_min_cert_for_membership: parameters::SmithWotMinCertForMembership::get(),
+        smith_inactivity_max_duration: parameters::SmithInactivityMaxDuration::get(),
+        smith_cert_max_by_issuer: parameters::SmithMaxByIssuer::get(),
+        cert_cert_period: parameters::CertPeriod::get(),
+        distance_evaluation_period: parameters::EvaluationPeriod::get(),
+        treasury_spend_period: <Runtime as pallet_treasury::Config>::SpendPeriod::get(),
+    }
+}
+
+// === client specifications ===
+
+/// emulate client specifications to get them from json
+#[derive(Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields)]
+pub struct ClientSpec {
+    name: String,
+    id: String,
+    chain_type: ChainType,
+    boot_nodes: Vec<MultiaddrWithPeerId>,
+    telemetry_endpoints: Option<TelemetryEndpoints>,
+    #[serde(default = "Default::default", skip_serializing_if = "Option::is_none")]
+    #[allow(dead_code)]
+    protocol_id: Option<String>,
+    // #[serde(default = "Default::default", skip_serializing_if = "Option::is_none")]
+    // fork_id: Option<String>,
+    properties: Option<serde_json::Map<std::string::String, JsonValue>>,
+    // #[serde(default)]
+    // code_substitutes: BTreeMap<String, Bytes>,
+}
+
+// === development chainspecs ===
+
+/// generate development chainspec with Alice validator
+// there is some code duplication because we can not use ClientSpec
+pub fn development_chainspecs(config_file_path: String) -> Result<ChainSpec, String> {
+    Ok(ChainSpec::builder(
+        &get_wasm_binary().ok_or_else(|| "Development wasm not available".to_string())?,
+        None,
+    )
+    .with_name("ĞTest Development")
+    .with_id("gtest_dev")
+    .with_chain_type(ChainType::Development)
+    .with_genesis_config_patch({
+        let genesis_data = gen_genesis_data::generate_genesis_data::<_, _, SessionKeys, GTestSKP>(
+            config_file_path.clone(),
+            get_parameters,
+            Some("Alice".to_owned()),
+        )
+        .expect("Genesis Data must be buildable");
+        genesis_data_to_gtest_genesis_conf(genesis_data)
+    })
+    .with_properties(
+        serde_json::json!({
+            "tokenDecimals": TOKEN_DECIMALS,
+            "tokenSymbol": TOKEN_SYMBOL,
+        })
+        .as_object()
+        .expect("must be a map")
+        .clone(),
+    )
+    .build())
+}
+
+// === live chainspecs ===
+
+/// live chainspecs
+// one smith must have session keys
+pub fn live_chainspecs(
+    client_spec: ClientSpec,
+    config_file_path: String,
+) -> Result<ChainSpec, String> {
+    if cfg!(feature = "fast") {
+        return Err(
+            "cannot build gtest live chainspec with the `fast` feature enabled".to_string(),
+        );
+    }
+    if cfg!(feature = "constant-fees") {
+        return Err(
+            "cannot build gtest live chainspec with the `constant-fees` feature enabled"
+                .to_string(),
+        );
+    }
+
+    Ok(ChainSpec::builder(
+        &get_wasm_binary().ok_or_else(|| "Development wasm not available".to_string())?,
+        None,
+    )
+    .with_name(client_spec.name.as_str())
+    .with_id(client_spec.id.as_str())
+    .with_chain_type(client_spec.chain_type)
+    .with_genesis_config_patch({
+        let genesis_data = gen_genesis_data::generate_genesis_data::<_, _, SessionKeys, GTestSKP>(
+            config_file_path.clone(),
+            get_parameters,
+            None,
+        )
+        .expect("Genesis Data must be buildable");
+        genesis_data_to_gtest_genesis_conf(genesis_data)
+    })
+    .with_telemetry_endpoints(client_spec.telemetry_endpoints.unwrap())
+    .with_properties(client_spec.properties.unwrap())
+    .with_boot_nodes(client_spec.boot_nodes)
+    .build())
+}
+
+/// custom genesis
+/// Gallia : informations propres à la Gallia, lues dans le même fichier que le reste du bloc zéro.
+#[derive(Deserialize, Default)]
+struct GalliaGenesisExtra {
+    /// pseudonymes des identités Vérificateur Titulus
+    #[serde(default)]
+    verifiers: Vec<String>,
+    /// compte du Trésor du mérite
+    merit_account: Option<AccountId>,
+}
+
+/// Gallia : ajoute les Vérificateurs et le compte du Trésor du mérite au bloc zéro.
+fn gallia_genesis_patch(
+    mut conf: serde_json::Value,
+    verifiers: Vec<u32>,
+    merit_account: Option<AccountId>,
+) -> serde_json::Value {
+    conf["wot"] = serde_json::json!({ "verifiers": verifiers });
+    conf["universalDividend"]["meritAccount"] = serde_json::json!(merit_account);
+    conf
+}
+
+/// Gallia : spécification de la vraie chaîne, construite à partir de
+/// `resources/gallia.yaml` (DUNITER_GENESIS_CONFIG) et `resources/gallia-data.json` (DUNITER_GENESIS_DATA).
+pub fn gallia_chainspecs(config_file_path: String) -> Result<ChainSpec, String> {
+    if cfg!(feature = "fast") {
+        return Err("cannot build the gallia chainspec with the `fast` feature enabled".to_string());
+    }
+    let config_file_path =
+        env::var("DUNITER_GENESIS_CONFIG").unwrap_or(config_file_path);
+    let extra: GalliaGenesisExtra = serde_yaml::from_slice(
+        &fs::read(&config_file_path).map_err(|e| format!("cannot read {config_file_path}: {e}"))?,
+    )
+    .map_err(|e| format!("cannot parse Gallia fields of {config_file_path}: {e}"))?;
+    let genesis_data = gen_genesis_data::generate_genesis_data::<_, _, SessionKeys, GTestSKP>(
+        config_file_path.clone(),
+        get_parameters,
+        None,
+    )?;
+    let mut verifiers = Vec::new();
+    for name in &extra.verifiers {
+        let idty = genesis_data
+            .identities
+            .iter()
+            .find(|i| &i.name == name)
+            .ok_or_else(|| format!("verifier `{name}` is not a genesis identity"))?;
+        verifiers.push(idty.idty_index);
+    }
+    if verifiers.is_empty() {
+        return Err("at least one verifier (Vérificateur Titulus) is required".to_string());
+    }
+    Ok(ChainSpec::builder(
+        &get_wasm_binary().ok_or_else(|| "Development wasm not available".to_string())?,
+        None,
+    )
+    .with_name("Gallia")
+    .with_id("gallia")
+    .with_protocol_id("gallia")
+    .with_chain_type(ChainType::Live)
+    .with_genesis_config_patch(gallia_genesis_patch(
+        genesis_data_to_gtest_genesis_conf(genesis_data),
+        verifiers,
+        extra.merit_account,
+    ))
+    .with_properties(
+        serde_json::json!({
+            "tokenDecimals": TOKEN_DECIMALS,
+            "tokenSymbol": TOKEN_SYMBOL,
+        })
+        .as_object()
+        .expect("must be a map")
+        .clone(),
+    )
+    .build())
+}
+
+fn genesis_data_to_gtest_genesis_conf(
+    genesis_data: super::gen_genesis_data::GenesisData<GenesisParameters, SessionKeys>,
+) -> serde_json::Value {
+    let super::gen_genesis_data::GenesisData {
+        accounts,
+        treasury_balance,
+        certs_by_receiver,
+        first_ud,
+        first_ud_reeval,
+        identities,
+        initial_authorities,
+        initial_monetary_mass,
+        memberships,
+        parameters: _,
+        common_parameters: _,
+        session_keys_map,
+        initial_smiths,
+        sudo_key,
+        technical_committee_members,
+        ud,
+    } = genesis_data;
+
+    serde_json::json!({
+        "account": {
+            "accounts": accounts,
+            "treasuryBalance": treasury_balance,
+        },
+        "authorityMembers": {
+            "initialAuthorities": initial_authorities,
+        },
+        "balances": {
+            "totalIssuance": initial_monetary_mass,
+        },
+        "babe": {
+            "epochConfig": Some(BABE_GENESIS_EPOCH_CONFIG),
+        },
+        "session": {
+            "keys": session_keys_map
+                .into_iter()
+                .map(|(account_id, session_keys)| (account_id.clone(), account_id, session_keys))
+                .collect::<Vec<_>>(),
+        },
+        "sudo": { "key": sudo_key },
+        "technicalCommittee": {
+            "members": technical_committee_members,
+        },
+        "quota": {
+            "identities": identities.iter().map(|i| i.idty_index).collect::<Vec<_>>(),
+        },
+        "identity": {
+            "identities": identities
+                .into_iter()
+                .map(
+                    |GenesisIdentity {
+                         idty_index,
+                         name,
+                         owner_key,
+                         status,
+                         next_scheduled,
+                     }| GenesisIdty {
+                        index: idty_index,
+                        name: common_runtime::IdtyName::from(name.as_str()),
+                        value: common_runtime::IdtyValue {
+                            data: IdtyData {
+                                first_eligible_ud: match status {
+                                    // Only members are eligible to UD.
+                                    // The first claimable UD has the minimum index (1).
+                                    common_runtime::IdtyStatus::Member => gtest_runtime::pallet_universal_dividend::FirstEligibleUd::min(),
+                                    _ => gtest_runtime::pallet_universal_dividend::FirstEligibleUd(None),
+                                }
+                            },
+                            next_creatable_identity_on: 0,
+                            old_owner_key: None,
+                            owner_key,
+                            next_scheduled,
+                            status,
+                        },
+                    },
+                )
+                .collect::<Vec<GenesisIdty<gtest_runtime::Runtime>>>(),
+        },
+        "certification": {
+            "applyCertPeriodAtGenesis": false,
+            "certsByReceiver": certs_by_receiver,
+        },
+        "membership": { "memberships": memberships },
+        "smithMembers": { "initialSmiths": initial_smiths},
+        "universalDividend": {
+            "firstReeval": first_ud_reeval,
+            "firstUd": first_ud,
+            "initialMonetaryMass": initial_monetary_mass,
+            "ud": ud,
+        },
+    })
+}
+
+/// Get the WASM bytes either from filesytem (`WASM_FILE` env variable giving the path to the wasm blob)
+/// or else get the one compiled from source code.
+/// Goal: allow to provide the WASM built with srtool, which is reproductible.
+fn get_wasm_binary() -> Option<Vec<u8>> {
+    let wasm_bytes_from_file = if let Ok(file_path) = env::var("WASM_FILE") {
+        Some(fs::read(file_path).unwrap_or_else(|e| panic!("Could not read wasm file: {}", e)))
+    } else {
+        None
+    };
+    wasm_bytes_from_file.or_else(|| WASM_BINARY.map(|bytes| bytes.to_vec()))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::chain_spec::gen_genesis_data;
+
+    #[test]
+    fn local_genesis_authorities_are_pinned_as_non_expiring() {
+        let genesis_data =
+            gen_genesis_data::generate_genesis_data_for_local_chain::<_, _, SessionKeys, GTestSKP>(
+                1,
+                3,
+                4,
+                EXISTENTIAL_DEPOSIT,
+                None,
+                get_local_sudo_account_id_from_seed("Alice"),
+                get_parameters,
+            )
+            .expect("Genesis Data must be buildable");
+
+        let genesis_data = pin_local_authorities_non_expiring(genesis_data, 1);
+
+        assert_eq!(
+            genesis_data
+                .memberships
+                .get(&1)
+                .expect("authority membership")
+                .expire_on,
+            NON_EXPIRING_LOCAL_AUTHORITY
+        );
+        assert!(
+            genesis_data
+                .certs_by_receiver
+                .get(&1)
+                .expect("authority certs")
+                .values()
+                .all(|expire_on| *expire_on == Some(NON_EXPIRING_LOCAL_AUTHORITY))
+        );
+
+        assert_eq!(
+            genesis_data
+                .memberships
+                .get(&2)
+                .expect("non-authority membership")
+                .expire_on,
+            parameters::MembershipPeriod::get()
+        );
+        assert!(
+            genesis_data
+                .certs_by_receiver
+                .get(&2)
+                .expect("non-authority certs")
+                .values()
+                .all(|expire_on| expire_on.is_none())
+        );
+    }
+}

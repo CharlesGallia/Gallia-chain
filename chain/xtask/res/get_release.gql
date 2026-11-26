@@ -1,0 +1,17 @@
+query GetReleaseOfProjectQuery($tag: String!) {
+    project(fullPath: "nodes/rust/duniter-v2s") {
+        release(tagName: $tag) {
+            id
+            tagName
+            assets {
+                links {
+                    edges {
+                        node {
+                            directAssetUrl
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

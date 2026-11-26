@@ -1,0 +1,28 @@
+# Modèle de la liste du bloc zéro de la Gallia.
+# Copie ce fichier en `fondateurs.yaml` et remplace les adresses.
+# UNIQUEMENT des adresses publiques (elles commencent par g1…), JAMAIS de phrase secrète.
+
+# Le compte qui certifie chaque Galli vérifié par le KYC de la Titulus.
+verificateur:
+  pseudo: Verificateur-Titulus
+  adresse: g1...
+
+# Le compte du Trésor de la Gallia : il reçoit la part du mérite (30 % de la création).
+tresor: g1...
+
+# Le compte qui administre la chaîne au démarrage (mises à jour, ajout de Vérificateurs).
+administrateur: g1...
+
+# Le Galli fondateur dont le nœud produit les blocs (celui de ce serveur au départ).
+# Les clés de session sont générées sur le serveur à l'étape suivante : laisser vide pour l'instant.
+forgeron:
+  pseudo: Charles
+  cles_de_session:
+
+# Les premiers Gallis fondateurs (le premier certifie le Vérificateur).
+fondateurs:
+  - pseudo: Charles
+    adresse: g1...
+
+# Les membres du comité technique (pseudonymes ci-dessus).
+comite_technique: [Charles]

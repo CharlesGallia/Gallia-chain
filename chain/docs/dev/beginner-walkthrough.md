@@ -1,0 +1,137 @@
+# Beginner walkthrough
+
+This is a beginner tutorial for those who do not have a previous experience with Rust ecosystem or need guidance to get familiar with Duniter v2s project. You'll need a development machine with an internet connection, at least **20 GB of free storage**, and **an hour or two** depending on your computing power.
+
+This walkthrough is based on the following video (french), don't hesitate to record an english voiceover if you feel so.
+
+[![preview](https://tube.p2p.legal/lazy-static/previews/654006dc-66c0-4e37-a32f-b7b5a1c13213.jpg)](https://tube.p2p.legal/w/n4TXxQ4SqxzpHPY4TNMXFu)
+
+> video walkthrough on peertube https://tube.p2p.legal/w/n4TXxQ4SqxzpHPY4TNMXFu
+
+## Requirements
+
+If you are on a debian based system, you can install the required packages with:
+
+```bash
+sudo apt install cmake pkg-config libssl-dev git build-essential clang libclang-dev curl protobuf-compiler
+```
+
+Else, look at the corresponding section in the [system setup documentation](./setup.md).
+
+Rust recommended installation method is through the rustup script that you can run with:
+
+```bash
+curl https://sh.rustup.rs -sSf | sh
+```
+
+If you reopen your terminal, it will give you access to the `rustup`,  `rustc` and `cargo` commands. You can then install the required Rust toolchains with:
+
+```bash
+rustup default stable
+rustup update stable
+rustup target add wasm32v1-none --toolchain stable
+```
+
+This can take about **2 minutes**.
+
+## Build project
+
+After cloning wherever you want the `duniter-v2s` repo with:
+
+```bash
+git clone https://git.duniter.org/nodes/rust/duniter-v2s.git
+```
+
+you can go to the root folder and build the substrate client and default runtime with:
+
+```bash
+cargo build
+```
+
+This will take about **2 minutes** to download dependencies plus between 5 and **15 minutes** to build in debug mode depending on the power of your processor. At this point, you built the *substrate client* (a kind of "shell" in which lies the runtime) and the default *runtime* itself. You can run a local blockchain with:
+
+```bash
+cargo run -- --dev --tmp # here, --dev means --chain=dev which selects the gtest runtime
+```
+
+When you see the logs, the blockchain is running and you can connect to it with [Duniter Portal](https://duniter-portal.axiom-team.fr/?rpc=ws://127.0.0.1:9944). You should see blocks being added every 6 seconds. You can use Alice, Bob, etc test accounts to submit extrinsics.
+
+If you need a local chain with another runtime, compile and run with the corresponding feature:
+
+```bash
+cargo run -p duniter --no-default-features --features gtest -- \
+  --chain gtest_local --validator --unsafe-force-node-key-generation --sealing manual --tmp
+cargo run -p duniter --no-default-features --features g1 -- \
+  --chain g1_local --validator --unsafe-force-node-key-generation --sealing manual --tmp
+```
+
+To start a 2-authority `gtest_local2` network with Alice and Bob:
+
+```bash
+# Generate Alice's deterministic p2p key once
+cargo run -p duniter --no-default-features --features gtest -- \
+  key generate-node-key --file /tmp/gtest_local2_alice.nodekey
+
+# Inspect Alice's stable peer ID
+cargo run -p duniter --no-default-features --features gtest -- \
+  key inspect-node-key --file /tmp/gtest_local2_alice.nodekey
+
+# Alice
+cargo run -p duniter --no-default-features --features gtest -- \
+  --chain gtest_local2 --validator --alice --unsafe-force-node-key-generation \
+  --node-key-file /tmp/gtest_local2_alice.nodekey \
+  --listen-addr /ip4/127.0.0.1/tcp/30333 --tmp
+
+# Reuse the peer ID printed by `key inspect-node-key` as <ALICE_PEER_ID>
+
+# Bob, with different local ports
+cargo run -p duniter --no-default-features --features gtest -- \
+  --chain gtest_local2 --validator --bob --unsafe-force-node-key-generation \
+  --port 30334 --rpc-port 9945 --prometheus-port 9616 \
+  --bootnodes /ip4/127.0.0.1/tcp/30333/p2p/<ALICE_PEER_ID> --tmp
+```
+
+Or use the dedicated helper script for the 2-validator `gtest_local2` setup:
+
+```bash
+scripts/run-gtest-local2.sh alice-peer-id
+scripts/run-gtest-local2.sh alice
+scripts/run-gtest-local2.sh bob --alice-peer-id <ALICE_PEER_ID>
+```
+
+For the single-node local chains shown above, you can still use the generic helper script:
+
+```bash
+scripts/run-local-chain.sh --runtime g1
+```
+
+When you see the logs, the blockchain is running and you can connect to it with [Duniter Portal](https://duniter-portal.axiom-team.fr/?rpc=ws://127.0.0.1:9944). You should see blocks being added every 6 seconds. You can use Alice, Bob, etc test accounts to submit extrinsics.
+
+## Autocompletion
+
+When using Duniter commands, you will benefit a lot from commands autocompletion. This can be achieved by following [autocompletion documentation](../user/autocompletion.md) for you shell. If you use bash the commands are:
+
+```bash
+# create local dir to store completion script
+mkdir -p ~/.local/share/duniter
+# export the bash completion file
+cargo run -- completion --generator bash > ~/.local/share/duniter/completion.bash
+# add the following line to your ~/.bashrc to automatically load completion on startup
+[[ -f $HOME/.local/share/duniter/completion.bash ]] && source $HOME/.local/share/duniter/completion.bash
+```
+
+You will then benefit from completion using `<Tab>` key and `*`.
+
+## End-to-end tests using cucumber
+
+Cucumber end2end tests are a good way to dive in Duniter's business procedure. They work by spawning a local blockchain and submitting extrinsics to it. You can build and run the cucumber tests by running:
+
+```bash
+cargo cucumber
+```
+
+which should take about **4 minutes** to build and run the tests. A highly detailed documentation about the end2end tests is available [in the dedicated folder](../../end2end-tests/README.md), you will learn how to read and modify the tests.
+
+## Get in touch with us
+
+Wether you are stuck and need help or have sucessfully completed this tutorial, don't hesitate to get in touch with us on the Duniter forum! If you found this walkthrough useful, please 🙏 let us know on the [walkthrough topic](https://forum.duniter.org/t/contribuer-a-duniter-tutoriel-video/9770) on the forum 😊.

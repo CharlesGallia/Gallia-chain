@@ -1,0 +1,81 @@
+#!/bin/bash
+set -eo pipefail
+
+# Keep the historical escape hatch, including for administrative subcommands.
+if [[ ${1:-} == -- ]]; then
+  shift
+  exec duniter "$@"
+fi
+
+script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+# shellcheck source=docker/duniter-cli-env.sh
+source "$script_dir/duniter-cli-env.sh"
+# shellcheck source=docker/duniter-cli-options.sh
+source "$script_dir/duniter-cli-options.sh"
+cli_args=("$@")
+env_args=()
+
+# Legacy aliases and profiles provide defaults for the generated variables.
+boolean() { [[ $1 =~ ^([Tt][Rr][Uu][Ee]|[Yy][Ee][Ss]|1)$ ]]; }
+DUNITER_NAME=${DUNITER_NAME:-${DUNITER_NODE_NAME:-${DUNITER_INSTANCE_NAME:-}}}
+DUNITER_RPC_CORS=${DUNITER_RPC_CORS:-all}
+DUNITER_RPC_EXTERNAL=${DUNITER_RPC_EXTERNAL:-true}
+DUNITER_NO_PROMETHEUS=${DUNITER_NO_PROMETHEUS:-${DUNITER_DISABLE_PROMETHEUS:-false}}
+DUNITER_NO_TELEMETRY=${DUNITER_NO_TELEMETRY:-${DUNITER_DISABLE_TELEMETRY:-false}}
+
+chain_name=${DUNITER_CHAIN:-${DUNITER_CHAIN_NAME:-dev}}
+if [[ -z ${DUNITER_CHAIN:-} ]] && ! duniter_has_arg chain && ! duniter_has_arg dev; then
+  if [[ $chain_name == dev ]]; then
+    DUNITER_DEV=${DUNITER_DEV:-true}
+  else
+    DUNITER_CHAIN=$chain_name
+  fi
+fi
+local_chain=${DUNITER_LOCAL_CHAIN:-false}
+[[ $chain_name != *_local ]] || local_chain=true
+if boolean "$local_chain"; then
+  DUNITER_VALIDATOR=${DUNITER_VALIDATOR:-true}
+  DUNITER_UNSAFE_FORCE_NODE_KEY_GENERATION=${DUNITER_UNSAFE_FORCE_NODE_KEY_GENERATION:-true}
+  DUNITER_SEALING=${DUNITER_SEALING:-manual}
+  DUNITER_TMP=${DUNITER_TMP:-true}
+fi
+# --tmp conflicts with --base-path in Clap. Do not inject the Docker default.
+if ! boolean "${DUNITER_TMP:-false}" && ! duniter_has_arg tmp; then
+  DUNITER_BASE_PATH=${DUNITER_BASE_PATH:-/var/lib/duniter}
+fi
+if boolean "${DUNITER_VALIDATOR:-false}" || boolean "$local_chain"; then
+  DUNITER_RPC_METHODS=${DUNITER_RPC_METHODS:-Unsafe}
+fi
+case ${DUNITER_PRUNING_PROFILE:-default} in
+  default) ;;
+  archive)
+    DUNITER_STATE_PRUNING=${DUNITER_STATE_PRUNING:-archive}
+    DUNITER_BLOCKS_PRUNING=${DUNITER_BLOCKS_PRUNING:-archive} ;;
+  light) DUNITER_BLOCKS_PRUNING=${DUNITER_BLOCKS_PRUNING:-14400} ;;
+  *) echo "ERROR: ignoring unknown DUNITER_PRUNING_PROFILE value '$DUNITER_PRUNING_PROFILE'" >&2 ;;
+esac
+
+# Preserve DUNITER_OPTIONS as one literal argument, as in older images.
+[[ -z ${DUNITER_OPTIONS:-} ]] || cli_args+=("$DUNITER_OPTIONS")
+
+# Explicit node keys bypass automatic identity creation.
+automatic_key=false
+if [[ -z ${DUNITER_NODE_KEY:-}${DUNITER_NODE_KEY_FILE:-} ]] &&
+   ! duniter_has_arg node-key && ! duniter_has_arg node-key-file; then
+  DUNITER_NODE_KEY_FILE=/var/lib/duniter/node.key
+  automatic_key=true
+fi
+
+# Reject invalid environment syntax before creating an identity.
+duniter_env_configure
+if $automatic_key; then
+  key_chain=(--chain "$chain_name")
+  [[ $chain_name != dev ]] || key_chain=(--dev)
+  if [[ ! -f $DUNITER_NODE_KEY_FILE ]]; then
+    duniter key generate-node-key --file "$DUNITER_NODE_KEY_FILE" "${key_chain[@]}"
+  fi
+  peer_id=$(duniter key inspect-node-key --file "$DUNITER_NODE_KEY_FILE")
+  echo "Node peer ID is '$peer_id'."
+fi
+# Do not log arguments: CLI options can contain passwords or node secrets.
+exec duniter ${env_args[@]+"${env_args[@]}"} ${cli_args[@]+"${cli_args[@]}"}

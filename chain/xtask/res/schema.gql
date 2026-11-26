@@ -1,0 +1,138 @@
+schema {
+  query: Query
+  mutation: Mutation
+}
+
+type Query {
+  project(fullPath: ID!): Project
+  mergeRequest(id: MergeRequestID!): MergeRequest
+}
+
+type Mutation {
+  releaseCreate(input: ReleaseCreateInput!): ReleaseCreatePayload
+  releaseAssetLinkCreate(input: ReleaseAssetLinkInput!): ReleaseAssetLinkCreatePayload
+}
+
+type Project {
+  mergeRequests(
+    state: MergeRequestState
+    milestoneTitle: String
+  ): MergeRequestConnection
+  issues(
+    state: IssueState
+    milestoneTitle: [String]
+  ): IssueConnection
+  release(tagName: String!): Release
+}
+
+scalar MergeRequestID
+
+type MergeRequest {
+  conflicts: Boolean!
+  diffHeadSha: String
+  draft: Boolean!
+  headPipeline: Pipeline
+  id: ID!
+  iid: String!
+  mergeable: Boolean!
+  title: String!
+}
+
+type MergeRequestConnection {
+  count: Int!
+  nodes: [MergeRequest]
+}
+
+enum MergeRequestState {
+  opened
+  closed
+  locked
+  all
+  merged
+}
+
+type IssueConnection {
+  count: Int!
+  nodes: [Issue]
+}
+
+type Issue {
+  id: ID!
+  iid: String
+  state: IssueState!
+  title: String!
+}
+
+enum IssueState {
+  opened
+  closed
+  locked
+  all
+}
+
+type Pipeline {
+  active: Boolean!
+  cancelable: Boolean!
+  id: ID!
+  iid: String!
+}
+
+input ReleaseCreateInput {
+  projectPath: ID!
+  tagName: String!
+  name: String
+  description: String
+  milestones: [String!]
+  assets: ReleaseAssetsInput
+  clientMutationId: String
+}
+
+input ReleaseAssetsInput {
+  links: [ReleaseAssetLinkInput!]
+}
+
+input ReleaseAssetLinkInput {
+  name: String!
+  url: String!
+  tagName: String!
+  projectPath: String!
+  directAssetPath: String
+  linkType: ReleaseAssetLinkType = PACKAGE
+}
+
+enum ReleaseAssetLinkType {
+  OTHER
+  RUNBOOK
+  PACKAGE
+  IMAGE
+}
+
+type ReleaseCreatePayload {
+  errors: [String!]!
+}
+
+type ReleaseAssetLinkCreatePayload {
+  errors: [String!]!
+}
+
+type Release {
+  id: String!
+  tagName: String!
+  assets: ReleaseAssets
+}
+
+type ReleaseAssets {
+  links: ReleaseAssetLinkConnection
+}
+
+type ReleaseAssetLinkConnection {
+  edges: [ReleaseAssetLinkEdge]
+}
+
+type ReleaseAssetLinkEdge {
+  node: ReleaseAssetLink
+}
+
+type ReleaseAssetLink {
+  directAssetUrl: String
+}

@@ -1,0 +1,166 @@
+# duniter/duniter
+
+Duniter is the software that supports the [Ğ1 libre-currency blockchain](https://duniter.org/).
+
+[Duniter](https://git.duniter.org/nodes/rust/duniter-v2s) is a crypto-currency software based on the Polkadot SDK framework to operate the libre currency.
+
+## Minimal docker-compose file for an mirror node
+
+```
+version: "3.5"
+
+services:
+  duniter-mirror:
+    image: duniter/duniter-gtest:latest
+    restart: unless-stopped
+    ports:
+      # Prometheus endpoint
+      - 9615:9615
+      # rpc
+      - 9944:9944
+      # p2p
+      - 30333:30333
+    volumes:
+      - data-mirror:/var/lib/duniter/
+    environment:
+      - DUNITER_CHAIN_NAME=gtest
+      - DUNITER_NODE_NAME=<my-node-name>
+
+volumes:
+  data-mirror:
+```
+
+## Minimal docker-compose file for a validator node
+
+```
+version: "3.5"
+
+services:
+  duniter-validator:
+    image: duniter/duniter-gtest:latest
+    restart: unless-stopped
+    ports:
+      # Prometheus endpoint
+      - 9615:9615
+      # p2p
+      - 30333:30333
+    volumes:
+      - data-validator:/var/lib/duniter/
+    environment:
+      - DUNITER_CHAIN_NAME=gtest
+      - DUNITER_VALIDATOR=true
+      - DUNITER_NODE_NAME=<my-validator-node-name>
+
+volumes:
+  data-validator:
+```
+
+## Local manual-sealing chain (gtest/g1)
+
+Build a local image (separate from production image build) with the runtime you want:
+
+```bash
+docker build -f docker/local.Dockerfile --build-arg chain=gtest -t duniter/duniter-v2s-gtest-local:latest .
+docker build -f docker/local.Dockerfile --build-arg chain=g1 -t duniter/duniter-v2s-g1-local:latest .
+```
+
+Production image builds keep using `docker/Dockerfile`.
+
+Run a local chain:
+
+```bash
+docker run --rm -it -p9944:9944 -p30333:30333 \
+  -e DUNITER_CHAIN_NAME=gt_local \
+  duniter/duniter-v2s-gtest-local:latest
+```
+
+`gt_local` is an alias for `gtest_local`. Genesis authorities have non-expiring
+memberships and received certifications. Sudo uses `//Alice` with ed25519 by default.
+
+Using a `*_local` chain automatically enables local mode in the entrypoint:
+`--validator --unsafe-force-node-key-generation --sealing manual --tmp`.
+
+## Environment variables
+
+| Name                         | Description                                                                                                                                                                                                                                                                                                                                          | Default                                                                                     |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `DUNITER_NODE_NAME`          | The node name. This name will appear on the Substrate telemetry server when telemetry is enabled.                                                                                                                                                                                                                                                    | Random name                                                                                 |
+| `DUNITER_CHAIN_NAME`         | The chain spec to run (for example `dev`, `gtest`, `gtest_dev`, `g1_dev`, `gt_local`, `gtest_local`, `g1_local`, or a path to a local raw chainspec JSON file).                                                                                                                                                                                                  | `dev` (development mode)                                                                    |
+| `DUNITER_PUBLIC_ADDR`        | The libp2p public address base. See [libp2p documentation](https://docs.libp2p.io/concepts/fundamentals/addressing/). This variable is useful when the node is behind a reverse proxy with its ports not directly exposed.<br>Note: the `p2p/<peer_id>` part of the address shouldn't be set in this variable. It is automatically added by Duniter. | duniter guesses one from the node's IPv4 address.                                       |
+| `DUNITER_LISTEN_ADDR`        | The libp2p listen address. See [libp2p documentation](https://docs.libp2p.io/concepts/fundamentals/addressing/). This variable is useful when running a validator node behind a reverse proxy, to force the P2P end point in websocket mode with:<br> `DUNITER_LISTEN_ADDR=/ip4/0.0.0.0/tcp/30333/ws`                                                | Non validator node: `/ip4/0.0.0.0/tcp/30333/ws`<br>Validator node: `/ip4/0.0.0.0/tcp/30333` |
+| `DUNITER_RPC_CORS`           | Value of the polkadot `--rpc-cors` option.                                                                                                                                                                                                                                                                                                           | `all`                                                                                       |
+| `DUNITER_VALIDATOR`          | Boolean (`true` / `false`) to run the node in validator mode. Configure the polkadot options `--validator --rpc-methods Unsafe`.                                                                                                                                                                                                                     | `false`                                                                                     |
+| `DUNITER_LOCAL_CHAIN`        | Boolean (`true` / `false`) to force local manual-sealing mode. Adds `--validator --unsafe-force-node-key-generation --sealing manual --tmp`. This mode is automatically enabled when `DUNITER_CHAIN_NAME` ends with `_local`.                                                                                                                    | `false`                                                                                     |
+| `DUNITER_DISABLE_PROMETHEUS` | Boolean to disable the Prometheus endpoint on port 9615.                                                                                                                                                                                                                                                                                             | `false`                                                                                     |
+| `DUNITER_DISABLE_TELEMETRY`  | Boolean to disable connecting to the Substrate telemetry server.                                                                                                                                                                                                                                                                                     | `false`                                                                                     |
+| `DUNITER_PRUNING_PROFILE`    | _ `default`<br> _ `archive`: keep all blocks and state blocks<br> \* `light`: keep only last 256 state blocks and last 14400 blocks (one day duration)                                                                                                                                                                                               | `default`                                                                                   |
+| `DUNITER_PUBLIC_RPC`         | The public RPC endpoint to gossip on the network and make available in the apps. | None |
+| `DUNITER_PUBLIC_SQUID`       | The public Squid graphql endpoint to gossip on the network and make available in the apps. Convention: `<domain.tld>/v1/graphql` | None |
+| `DUNITER_PUBLIC_ENDPOINTS`   | Path to a JSON file containing public endpoints to gossip on the network. The file should use the following format:<br>```{"endpoints": [  { "protocol": "rpc", "address": "wss://gtest.example.com" },  { "protocol": "squid", "address": "gtest.example.com/v1/graphql" }]}``` | None |
+
+## Other Duniter options
+
+You can pass any other option to Duniter using the `command` docker-compose element:
+
+```
+    command:
+      # workaround for substrate issue #12073
+      # https://github.com/paritytech/substrate/issues/12073
+      - "--wasm-execution=interpreted-i-know-what-i-do"
+```
+
+## Start Duniter
+
+Once you are happy with your `docker-compose.yml` file, run in the same folder:
+
+```bash
+docker compose up -d
+```
+
+## Running duniter subcommands or custom set of options
+
+To run duniter from the command line without the default configuration detailed in the "Environment variables" section use `--` as the first argument. For example:
+
+```
+$ docker run --rm duniter/duniter-gtest:latest -- key generate
+$ docker run --rm duniter/duniter-gtest:latest -- --chain gtest ...
+```
+
+## Generated CLI environment variables
+
+The image accepts daemon flags as `DUNITER_<FLAG_NAME>`, with hyphens replaced
+by underscores and letters uppercased. For example, `DUNITER_BLOCKS_PRUNING=archive`
+passes `--blocks-pruning=archive`. Values are passed literally, without shell
+expansion. The [CLI catalogue](../node/cli/schema.json) lists the supported flags.
+
+Explicit CLI arguments override the corresponding environment option. Generated
+variables override legacy aliases and pruning profiles. Existing variables such
+as `DUNITER_CHAIN_NAME`, `DUNITER_NODE_NAME`, `DUNITER_INSTANCE_NAME`,
+`DUNITER_DISABLE_TELEMETRY`, and `DUNITER_PRUNING_PROFILE` remain supported.
+`DUNITER_OPTIONS` retains its historical behavior as one literal argument.
+
+Boolean variables accept `true`, `yes`, or `1` to enable the flag, and `false`,
+`no`, or `0` to omit it. Words are case-insensitive. An empty value leaves the
+Docker or Duniter default unchanged. Repeated options accept one value per line,
+including spaces within a value:
+
+```sh
+DUNITER_TELEMETRY_URL='wss://telemetry.example.org/submit 0
+wss://backup.example.org/submit 1'
+```
+
+The normal entrypoint keeps the Docker defaults, automatic node identity, and
+legacy validator and local-chain profiles. An explicit node key or key file
+bypasses automatic identity generation. Temporary mode omits the default base
+path because Duniter rejects `--tmp` together with `--base-path`.
+
+A leading `--` still bypasses all entrypoint configuration, including the new
+variables. Use this mode for administrative subcommands or full manual control:
+
+```sh
+docker run --rm <duniter-image> -- --chain g1 --blocks-pruning archive
+```
+
+`cargo xtask export-cli-schema` also generates `docker/duniter-cli-options.sh`.
+Commit both files after CLI changes. The `--check` command verifies both outputs.
+The runtime image needs neither Python nor a JSON parser for environment support.

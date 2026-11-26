@@ -1,0 +1,30 @@
+# Debian Setup Instructions
+
+If you want to publish a public RPC endpoint, do not expose port `9944`
+directly. Put it behind a reverse proxy instead. See
+`docs/user/reverse-proxy.md` for nginx examples and deployment guidance.
+
+## Mirror Node
+
+1. Download the Duniter .deb file.
+2. Install the package: `dpkg -i duniter_vx.y.z.deb`.
+3. Change the default configuration (at least the node name) by modifying `/etc/duniter/env_file`.
+4. Start the service: `sudo systemctl start duniter-mirror.service`.
+5. Enable the service at startup: `sudo systemctl enable duniter-mirror.service`.
+
+## Smith Node
+
+1. Download the Duniter .deb file.
+2. Install the package: `dpkg -i duniter_vx.y.z.deb`.
+3. Change the default configuration (at least the node name) by modifying `/etc/duniter/env_file`.
+4. Create network keys using the same base path as in the config file: `duniter key generate-node-key --base-path <YOUR_BASE_PATH> --chain <YOUR_CHAIN>`.
+5. Start the service: `sudo systemctl start duniter-smith.service`.
+6. Enable the service at startup: `sudo systemctl enable duniter-smith.service`.
+
+## Distance Oracle
+
+A Smith node needs to be installed.
+
+1. Change the default configuration by modifying `/etc/duniter/env_file`.
+2. Start the service: `sudo systemctl start distance-oracle.service`.
+3. Enable the service at startup: `sudo systemctl enable distance-oracle.service`.

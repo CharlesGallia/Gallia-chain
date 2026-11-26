@@ -1,0 +1,70 @@
+# ===== Ğ1 Network Genesis Configuration =====
+# Minimal config for build validation — to be completed before real launch
+
+# Ğ1 per UD (in centièmes)
+ud: 1148
+
+# null = computed automatically from migration data
+# 1772967600000 = 2026-03-08T12:00:00 UTC
+first_ud: 1772967600000
+
+# Date of the first UD reevaluation in milliseconds: 2026-03-21T17:00:00 UTC
+first_ud_reeval: 1774112400000
+
+# Explicit smith WoT (manual mode):
+# Update `certs_received` with the intended final cert graph before launch.
+smiths:
+  "moul":
+    name: "moul"
+    certs_received: ["HugoTrentesaux", "tuxmain", "1000i100"]
+  "HugoTrentesaux":
+    name: "HugoTrentesaux"
+    certs_received: ["tuxmain", "1000i100", "vit"]
+  "tuxmain":
+    name: "tuxmain"
+    certs_received: ["1000i100", "vit", "cgeek"]
+  "1000i100":
+    name: "1000i100"
+    certs_received: ["vit", "cgeek", "aya"]
+  "vit":
+    name: "vit"
+    certs_received: ["cgeek", "aya", "Bulmananabelle"]
+  "cgeek":
+    name: "cgeek"
+    certs_received: ["aya", "Bulmananabelle", "gui_tooun"]
+  "aya":
+    name: "aya"
+    certs_received: ["Bulmananabelle", "gui_tooun", "JosselinFERREIRA"]
+  "Bulmananabelle":
+    name: "Bulmananabelle"
+    certs_received: ["gui_tooun", "JosselinFERREIRA", "SyoulAnuanua"]
+  "gui_tooun":
+    name: "gui_tooun"
+    certs_received: ["JosselinFERREIRA", "SyoulAnuanua", "vjrj"]
+  "JosselinFERREIRA":
+    name: "JosselinFERREIRA"
+    certs_received: ["SyoulAnuanua", "vjrj", "Damery"]
+  "SyoulAnuanua":
+    name: "SyoulAnuanua"
+    certs_received: ["vjrj", "Damery", "Nicolas80"]
+  "vjrj":
+    name: "vjrj"
+    certs_received: ["Damery", "Nicolas80", "poka"]
+  "Damery":
+    name: "Damery"
+    certs_received: ["Nicolas80", "poka", "moul"]
+  "Nicolas80":
+    name: "Nicolas80"
+    certs_received: ["poka", "moul", "HugoTrentesaux"]
+  "poka":
+    name: "poka"
+    certs_received: ["moul", "HugoTrentesaux", "tuxmain"]
+    # This smith will be the first author
+    session_keys: "0xb509da04cc4347689acbb8f6204fc8a3585c368819f76c6c3df1fa3027242b37224f41a929d5d05d44421b393659d77e9def7fa1958258588bac86cbfc805376224f41a929d5d05d44421b393659d77e9def7fa1958258588bac86cbfc805376224f41a929d5d05d44421b393659d77e9def7fa1958258588bac86cbfc805376"
+
+# The address which will automatically transfer 1,00 Ğ1 on Genesis to the Treasury
+treasury_funder_pubkey: "2ny7YAdmzReQxAayyJZsyVYwYhVyax2thKcGknmQy5nQ"
+
+# The technical committee members, to act as sudo
+technical_committee:
+  ["moul", "HugoTrentesaux", "tuxmain", "1000i100", "vit", "cgeek", "poka", "aya"]

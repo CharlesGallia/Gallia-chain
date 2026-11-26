@@ -1,0 +1,9 @@
+.editorconfig
+.envrc
+.git*
+.vscode
+docker/Dockerfile
+docker-compose.yml
+arm-build/
+**/target/
+build/
