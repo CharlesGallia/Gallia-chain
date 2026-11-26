@@ -1,0 +1,10 @@
+# Étape 2 : nœud de test Duniter v2 (réseau de développement local, données temporaires)
+name: gallia-test
+services:
+  duniter-dev:
+    image: duniter/duniter-gtest-1000:1200-fast-2.3.3
+    container_name: gallia-duniter-dev
+    command: ["--", "--dev", "--rpc-external", "--rpc-cors=all", "--sealing=production"]
+    ports:
+      - "127.0.0.1:9944:9944"   # accès local seulement
+    restart: "no"
