@@ -23,6 +23,7 @@ services:
       - --validator
       - --rpc-port=9944
       - --rpc-cors=all
+      - --rpc-methods=safe          # jamais de fonctions d administration du nœud par le RPC
       - --port=30333
       - --prometheus-port=9615
       - --no-telemetry

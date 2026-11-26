@@ -1,0 +1,12 @@
+# Galli.Pay et le tableau de la Gallia, sur ce serveur (port 8090, accessible depuis le serveur seulement
+# pour l'instant ; l'ouverture au public se fera par un nom de domaine).
+name: galli-pay
+services:
+  web:
+    image: nginx:1.27-alpine
+    container_name: galli-pay
+    network_mode: host
+    restart: unless-stopped
+    volumes:
+      - ./public:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro

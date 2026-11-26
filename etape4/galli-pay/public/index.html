@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Galli.Pay</title>
+  <meta name="description" content="Galli.Pay : le portefeuille du Gallo, monnaie de la Gallia.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div class="marque">
+      <span class="sceau">G</span>
+      <div>
+        <h1>Galli.Pay</h1>
+        <p>Le Gallo, monnaie de la Gallia · <span id="chaine">…</span></p>
+      </div>
+    </div>
+    <nav>
+      <button data-vers="portefeuille">Mon portefeuille</button>
+      <button data-vers="chiffres">La Gallia en chiffres</button>
+    </nav>
+  </header>
+
+  <main>
+    <p id="etat" class="message" hidden></p>
+
+    <!-- ===== Portefeuille ===== -->
+    <section data-ecran="portefeuille" hidden>
+      <div id="sans-compte" class="carte accueil">
+        <h2>Bienvenue, Galli</h2>
+        <p>Ton portefeuille vit dans ce navigateur. Tes clés n'en sortent jamais : elles sont protégées par ton code secret.</p>
+        <div class="boutons">
+          <button id="creer" class="or">Créer mon compte</button>
+          <button data-vers="importer" class="discret">J'ai déjà mes 12 mots</button>
+        </div>
+      </div>
+
+      <div id="avec-compte" hidden>
+        <div class="ligne-compte">
+          <select id="choix-compte" aria-label="Compte"></select>
+          <button data-vers="importer" class="discret petit">+ Ajouter</button>
+        </div>
+
+        <div class="grille">
+          <div class="carte solde">
+            <h3>Solde</h3>
+            <p id="solde" class="chiffre">—</p>
+            <p id="statut" class="sous"></p>
+          </div>
+          <div class="carte">
+            <h3>Pain quotidien à réclamer</h3>
+            <p id="pain" class="chiffre">—</p>
+            <button id="reclamer" class="or" disabled>Réclamer mon pain</button>
+            <p id="msg-pain" class="message" hidden></p>
+          </div>
+        </div>
+
+        <div class="grille">
+          <div class="carte">
+            <h3>Recevoir</h3>
+            <img id="qr" alt="QR code de mon adresse" width="180" height="180">
+            <p id="mon-adresse" class="adresse"></p>
+            <button id="copier" class="discret petit">Copier l'adresse</button>
+            <p id="msg-recevoir" class="message" hidden></p>
+          </div>
+          <form id="form-envoyer" class="carte">
+            <h3>Envoyer</h3>
+            <label>Adresse du Galli<input id="dest" required placeholder="g1…" autocomplete="off"></label>
+            <label>Montant en Gallo<input id="montant" required inputmode="decimal" placeholder="0,00"></label>
+            <label>Code secret<input id="code-envoyer" type="password" required autocomplete="current-password"></label>
+            <button class="or">Envoyer</button>
+            <p class="sous">Seuls les Gallis vérifiés par la Titulus peuvent recevoir des Gallo.</p>
+            <p id="msg-envoyer" class="message" hidden></p>
+          </form>
+        </div>
+
+        <div class="carte">
+          <h3>Historique</h3>
+          <ul id="historique" class="liste"></ul>
+        </div>
+        <p class="centre"><button id="oublier" class="lien">Retirer ce compte de ce navigateur</button></p>
+      </div>
+    </section>
+
+    <!-- ===== Création ===== -->
+    <section data-ecran="creer" hidden>
+      <form id="form-creer" class="carte">
+        <h2>Tes 12 mots secrets</h2>
+        <p>Écris-les sur papier, dans l'ordre, et garde-les en lieu sûr. Ils sont la seule façon de retrouver tes Gallo. Personne ne te les demandera jamais.</p>
+        <ol id="mots" class="mots"></ol>
+        <label class="case"><input type="checkbox" id="mots-notes"> J'ai noté mes 12 mots sur papier.</label>
+        <label>Nom du compte<input id="nom-creer" placeholder="Mon compte" maxlength="40"></label>
+        <label>Code secret (au moins 6 caractères)<input id="code-creer" type="password" required minlength="6" autocomplete="new-password"></label>
+        <div class="boutons">
+          <button class="or">Créer mon compte</button>
+          <button type="button" data-vers="portefeuille" class="discret">Annuler</button>
+        </div>
+        <p id="msg-creer" class="message" hidden></p>
+      </form>
+    </section>
+
+    <!-- ===== Import ===== -->
+    <section data-ecran="importer" hidden>
+      <form id="form-importer" class="carte">
+        <h2>Retrouver mon compte</h2>
+        <p>Tape tes 12 mots ici. Ils restent dans ce navigateur, chiffrés par ton code secret.</p>
+        <label>Mes 12 mots<textarea id="mots-importer" rows="3" required autocomplete="off" spellcheck="false"></textarea></label>
+        <label>Mon adresse g1… (conseillé, pour retrouver le bon compte)<input id="adresse-importer" placeholder="g1…" autocomplete="off"></label>
+        <label>Nom du compte<input id="nom-importer" placeholder="Mon compte" maxlength="40"></label>
+        <label>Code secret (au moins 6 caractères)<input id="code-importer" type="password" required minlength="6" autocomplete="new-password"></label>
+        <div class="boutons">
+          <button class="or">Retrouver mon compte</button>
+          <button type="button" data-vers="portefeuille" class="discret">Annuler</button>
+        </div>
+        <p id="msg-importer" class="message" hidden></p>
+      </form>
+    </section>
+
+    <!-- ===== Chiffres ===== -->
+    <section data-ecran="chiffres" hidden>
+      <div class="grille quatre">
+        <div class="carte"><h3>Gallis</h3><p id="c-gallis" class="chiffre">—</p></div>
+        <div class="carte"><h3>Gallibra du jour</h3><p id="c-jour" class="chiffre">—</p><p id="c-jour-detail" class="sous"></p></div>
+        <div class="carte"><h3>Pain quotidien</h3><p id="c-pain" class="chiffre">—</p><p class="sous">prochain : <span id="c-prochain">—</span></p></div>
+        <div class="carte"><h3>Gallo en circulation</h3><p id="c-masse" class="chiffre">—</p></div>
+      </div>
+      <form id="form-recherche" class="carte">
+        <h3>Consulter un compte</h3>
+        <div class="ligne-compte"><input id="recherche" placeholder="g1…" autocomplete="off"><button class="or">Voir</button></div>
+        <div id="resultat-recherche"></div>
+      </form>
+      <div class="carte">
+        <h3>Derniers virements</h3>
+        <ul id="derniers" class="liste"></ul>
+      </div>
+    </section>
+  </main>
+
+  <footer>Gallia · Gallo, deux décimales · logiciel libre (AGPL-3.0)</footer>
+  <script src="app.js"></script>
+</body>
+</html>
