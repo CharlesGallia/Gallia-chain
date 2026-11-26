@@ -28,7 +28,7 @@ Monnaie de la Gallia, inspirée de la Ğ1 et construite à partir du logiciel li
 - Nom de la chaîne : Gallia. Nom de la monnaie : Gallo. Symbole : GALLO. Deux décimales.
 - La Gallibra est le nom de la création monétaire : elle crée les Gallo.
 - Le pain quotidien : chaque Galli membre reçoit chaque jour la même part (dividende universel de Duniter).
-  Valeur de départ : 10 Gallo par jour. Croissance de la masse : environ 10 % par an (réévaluation de la Ğ1, à garder par défaut).
+  Valeur de départ : 1 Gallo par jour (soit 100 en unités de base, avec deux décimales). Croissance de la masse : environ 10 % par an (réévaluation de la Ğ1, à garder par défaut).
 - Pas de parrains obligatoires : l'identité est vérifiée par le KYC de la Titulus.
   Un compte « Vérificateur Titulus » de la Gallia certifie chaque Galli vérifié.
   Le nombre de certifications nécessaires pour devenir membre doit donc pouvoir tomber à 1,
